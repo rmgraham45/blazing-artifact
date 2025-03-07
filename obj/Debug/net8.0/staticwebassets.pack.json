@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\ArtifactsMMO\\Artifacts\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\Artifacts.bundle.scp.css",
+      "PackagePath": "staticwebassets\\Artifacts.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\ArtifactsMMO\\Artifacts\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\ArtifactsMMO\\Artifacts\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\ArtifactsMMO\\Artifacts\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\ArtifactsMMO\\Artifacts\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Artifacts.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Artifacts.props",
+      "PackagePath": "build\\Artifacts.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Artifacts.props",
+      "PackagePath": "buildMultiTargeting\\Artifacts.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Artifacts.props",
+      "PackagePath": "buildTransitive\\Artifacts.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

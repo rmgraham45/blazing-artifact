@@ -1,0 +1,823 @@
+@page "/Move"
+@using System.Text
+@rendermode InteractiveServer
+@using System.Diagnostics
+@using Artifacts.Components
+@using RestSharp
+@using RestSharp.Authenticators
+@using System.Text.Json
+@using System.Timers
+@using Radzen.Blazor
+@using Radzen
+@using Radzen.Blazor
+
+@inject IHttpContextAccessor HttpContextAccessor
+
+<PageTitle>Let's move together</PageTitle>
+
+
+<link href="styles.css" rel="stylesheet" />
+
+<h1>Time to move</h1>
+
+<div class="progress">
+    <div class="progress-bar" role="progressbar" style="width: @progressWidth%;" aria-valuenow="@progressWidth" aria-valuemin="0" aria-valuemax="100">@progressWidth%</div>
+</div>
+<div class="mt-3">
+    <button class="@ActionButtonClass" @onclick="MoveAction" disabled="@IsActionButtonsDisabled">Move</button>
+    <button class="@GatherButtonClass" @onclick="Gather" disabled="@IsActionButtonsDisabled">Gather</button>
+    <button class="btn btn-primary" @onclick="FetchMapData">Fetch Map Data</button>
+</div>
+
+<div>
+    <p>Current X Coordinate: @currentXCoordinate</p>
+    <p>Current Y Coordinate: @currentYCoordinate</p>
+</div>
+
+<h2>Character Information</h2>
+<div class="mb-3">
+    <input type="text" class="form-control" placeholder="Character Name" @bind="characterName" />
+    <button class="btn btn-primary mt-2" @onclick="FetchCharacterData">Fetch Character Data</button>
+</div>
+@if (characterData != null)
+{
+    <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Server" @bind-SelectedIndex=@selectedIndex>
+        <Tabs>
+            <RadzenTabsItem Text="Basic Info">
+                <RadzenCard class="rz-card rz-variant-filled rz-border-radius-3">
+                    <h3>@characterData.Name</h3>
+                    <RadzenStack JustifyContent="JustifyContent.Start" Gap="1rem" class="rz-p-2">
+                        <RadzenText TextStyle="TextStyle.Body1">Account: @characterData.Account</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">Skin: @characterData.Skin</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">Level: @characterData.Level</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">XP: @characterData.Xp / @characterData.MaxXp</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">Gold: @characterData.Gold</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">Speed: @characterData.Speed</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Skills">
+                <div class="row">
+                    <div class="col-6">
+                        <p>Mining: @characterData.MiningLevel (XP: @characterData.MiningXp / @characterData.MiningMaxXp)</p>
+                        <p>Woodcutting: @characterData.WoodcuttingLevel (XP: @characterData.WoodcuttingXp / @characterData.WoodcuttingMaxXp)</p>
+                        <p>Fishing: @characterData.FishingLevel (XP: @characterData.FishingXp / @characterData.FishingMaxXp)</p>
+                        <p>Weaponcrafting: @characterData.WeaponcraftingLevel (XP: @characterData.WeaponcraftingXp / @characterData.WeaponcraftingMaxXp)</p>
+                        <p>Gearcrafting: @characterData.GearcraftingLevel (XP: @characterData.GearcraftingXp / @characterData.GearcraftingMaxXp)</p>
+                    </div>
+                    <div class="col-6">
+                        <p>Jewelrycrafting: @characterData.JewelrycraftingLevel (XP: @characterData.JewelrycraftingXp / @characterData.JewelrycraftingMaxXp)</p>
+                        <p>Cooking: @characterData.CookingLevel (XP: @characterData.CookingXp / @characterData.CookingMaxXp)</p>
+                        <p>Alchemy: @characterData.AlchemyLevel (XP: @characterData.AlchemyXp / @characterData.AlchemyMaxXp)</p>
+                    </div>
+                </div>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Stats">
+                <div class="row">
+                    <div class="col-6">
+                        <p>HP: @characterData.Hp / @characterData.MaxHp</p>
+                        <p>Haste: @characterData.Haste</p>
+                        <p>Critical Strike: @characterData.CriticalStrike</p>
+                        <p>Wisdom: @characterData.Wisdom</p>
+                        <p>Prospecting: @characterData.Prospecting</p>
+                    </div>
+                    <div class="col-6">
+                        <p>Attack Fire: @characterData.AttackFire</p>
+                        <p>Attack Earth: @characterData.AttackEarth</p>
+                        <p>Attack Water: @characterData.AttackWater</p>
+                        <p>Attack Air: @characterData.AttackAir</p>
+                        <p>Damage: @characterData.Dmg</p>
+                        <p>Damage Fire: @characterData.DmgFire</p>
+                        <p>Damage Earth: @characterData.DmgEarth</p>
+                        <p>Damage Water: @characterData.DmgWater</p>
+                        <p>Damage Air: @characterData.DmgAir</p>
+                        <p>Resistance Fire: @characterData.ResFire</p>
+                        <p>Resistance Earth: @characterData.ResEarth</p>
+                        <p>Resistance Water: @characterData.ResWater</p>
+                        <p>Resistance Air: @characterData.ResAir</p>
+                    </div>
+                </div>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Position">
+                <p>X: @characterData.X</p>
+                <p>Y: @characterData.Y</p>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Cooldown">
+                <p>Cooldown: @characterData.Cooldown</p>
+                <p>Cooldown Expiration: @characterData.CooldownExpiration</p>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Equipment">
+                <div class="row">
+                    <div class="col-6">
+                        <p>Leg Armor Slot: @characterData.LegArmorSlot</p>
+                        <p>Boots Slot: @characterData.BootsSlot</p>
+                    </div>
+                    <div class="col-6">
+                        <p>Ring1 Slot: @characterData.Ring1Slot</p>
+                        <p>Ring2 Slot: @characterData.Ring2Slot</p>
+                        <p>Amulet Slot: @characterData.AmuletSlot</p>
+                        <p>Artifact1 Slot: @characterData.Artifact1Slot</p>
+                        <p>Artifact2 Slot: @characterData.Artifact2Slot</p>
+                        <p>Artifact3 Slot: @characterData.Artifact3Slot</p>
+                        <p>Utility1 Slot: @characterData.Utility1Slot (Quantity: @characterData.Utility1SlotQuantity)</p>
+                        <p>Utility2 Slot: @characterData.Utility2Slot (Quantity: @characterData.Utility2SlotQuantity)</p>
+                        <p>Bag Slot: @characterData.BagSlot</p>
+                    </div>
+                </div>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Inventory">
+                <RadzenDataGrid Data="@characterData.Inventory">
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(InventoryItem.Code)" Title="Name" />
+                        <RadzenDataGridColumn Property="@nameof(InventoryItem.Quantity)" Title="Quantity" />
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+}
+
+<h2>Craft Item</h2>
+<div class="mb-3">
+    <input type="text" class="form-control" placeholder="Item Code" @bind="craftItemCode" />
+    <input type="number" class="form-control" placeholder="Quantity" @bind="craftItemQuantity" />
+    <button class="btn btn-primary mt-2" @onclick="CraftItemAction">Craft Item</button>
+</div>
+
+<h2>
+    Coordinates
+    <button class="btn btn-link" @onclick="ToggleCoordinatesTable">
+        Toggle
+    </button>
+</h2>
+@if (isCoordinatesTableVisible)
+{
+    <div id="coordinatesTable">
+        <input type="text" class="form-control" placeholder="Content Type" @bind="contentType" />
+        <button class="btn btn-primary" @onclick="FetchMapData">Fetch Map Data</button>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>X</th>
+                    <th>Y</th>
+                    <th @onclick="SortByType" style="cursor: pointer;">Resource Type</th>
+                    <th>Resource Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var coord in coordinates)
+                {
+                    <tr>
+                        <td>@coord.Name</td>
+                        <td>@coord.X</td>
+                        <td>@coord.Y</td>
+                        <td>@coord.Content?.Type</td>
+                        <td>@coord.Content?.Code</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2>
+    Craft Data
+</h2>
+<div>
+    <input type="text" class="form-control" placeholder="Craft Material" @bind="craftMaterial" />
+    <button class="btn btn-primary" @onclick="FetchCraftData">Fetch Craft Data</button>
+</div>
+@if (craftItems.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Level</th>
+                <th>Type</th>
+                <th>Subtype</th>
+                <th>Description</th>
+                <th>Effects</th>
+                <th>Craft Skill</th>
+                <th>Craft Level</th>
+                <th>Craft Items</th>
+                <th>Craft Quantity</th>
+                <th>Tradeable</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in craftItems)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Code</td>
+                    <td>@item.Level</td>
+                    <td>@item.Type</td>
+                    <td>@item.Subtype</td>
+                    <td>@item.Description</td>
+                    <td>
+                        @foreach (var effect in item.Effects)
+                        {
+                            <div>@effect.Code: @effect.Value</div>
+                        }
+                    </td>
+                    <td>@item.Craft.Skill</td>
+                    <td>@item.Craft.Level</td>
+                    <td>
+                        @foreach (var craftItem in item.Craft.Items)
+                        {
+                            <div>@craftItem.Code: @craftItem.Quantity</div>
+                        }
+                    </td>
+                    <td>@item.Craft.Quantity</td>
+                    <td>@item.Tradeable</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private int yCoordinate { get; set; }
+    private int xCoordinate { get; set; }
+    private int currentXCoordinate { get; set; }
+    private int currentYCoordinate { get; set; }
+    private Popup popupRef;
+    private bool autoGather = false;
+    private string token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImdyYWhhbXJtNDVAZ21haWwuY29tIiwicGFzc3dvcmRfY2hhbmdlZCI6IiJ9.XjKyYTICSWCNv4irW5R52Zdkxc4wrQPhLheDtvlnnGQ";
+    private Timer timer;
+    private Timer progressTimer;
+    private int remainingSeconds;
+    private int totalCooldownSeconds;
+    private double progressWidth;
+    private List<Item> inventory = new List<Item>();
+    private List<Coordinate> coordinates = new List<Coordinate>();
+    private bool sortAscending = true;
+    private bool isCoordinatesTableVisible = false;
+    private string contentType = string.Empty;
+    private bool isInventorySectionVisible = false;
+    private List<CraftItem> craftItems = new List<CraftItem>();
+    private bool isStatsSectionVisible = false;
+    private string characterName = "pancake";
+    private CharacterData characterData = null;
+    private bool isCharInventorySectionVisible = false;
+    private string craftItemCode = string.Empty;
+    private int craftItemQuantity = 1;
+    private string craftMaterial = string.Empty;
+    private bool isSkillsSectionVisible = false;
+    int selectedIndex = 0;
+
+
+    protected override void OnInitialized()
+    {
+        timer = new Timer(1000);
+        timer.Elapsed += TimerElapsed;
+        timer.Start();
+
+        progressTimer = new Timer(2000);
+        progressTimer.Elapsed += ProgressTimerElapsed;
+        progressTimer.Start();
+    }
+
+    private void TimerElapsed(object sender, ElapsedEventArgs e)
+    {
+        _ = UpdateCoordinates();
+    }
+
+    private void ProgressTimerElapsed(object sender, ElapsedEventArgs e)
+    {
+        if (remainingSeconds > 0)
+        {
+            remainingSeconds--;
+            progressWidth = ((double)(totalCooldownSeconds - remainingSeconds) / totalCooldownSeconds) * 100;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ToggleCoordinatesTable()
+    {
+        isCoordinatesTableVisible = !isCoordinatesTableVisible;
+    }
+
+    private async Task UpdateCoordinates()
+    {
+        try
+        {
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await client.GetAsync("https://api.artifactsmmo.com/my/characters");
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                var coordinatesData = JsonDocument.Parse(jsonResponse);
+                var dataArray = coordinatesData.RootElement.GetProperty("data").EnumerateArray().ToList();
+                foreach (var data in dataArray)
+                {
+                    if (data.GetProperty("name").GetString() == "pancake")
+                    {
+                        currentXCoordinate = data.GetProperty("x").GetInt32();
+                        currentYCoordinate = data.GetProperty("y").GetInt32();
+                        break;
+                    }
+                }
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating coordinates: {ex.Message}");
+        }
+    }
+
+    private async Task MoveAction()
+    {
+        var client = new RestClient("https://api.artifactsmmo.com/my/pancake/action/move");
+        var request = new RestRequest(Method.POST);
+        request.AddHeader("Content-Type", "application/json");
+        request.AddHeader("Accept", "application/json");
+        request.AddHeader("Authorization", "Bearer " + token);
+        var body = new { x = xCoordinate, y = yCoordinate };
+        request.AddJsonBody(body);
+        IRestResponse response = await client.ExecuteAsync(request);
+
+        if (response.IsSuccessful)
+        {
+            var jsonResponse = JsonDocument.Parse(response.Content);
+            totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
+            remainingSeconds = totalCooldownSeconds;
+            Console.WriteLine("Move success");
+            popupRef.Show("Move success", "Move action");
+        }
+        else
+        {
+            Console.WriteLine("Move failed");
+            popupRef.Show(response.StatusCode.ToString(), "Move action");
+        }
+    }
+
+    private async Task GetMap()
+    {
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var response = await client.GetAsync("https://api.artifactsmmo.com/my/pancake/map");
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Get map success");
+            popupRef.Show("Get map success", "Get map action");
+        }
+        else
+        {
+            Console.WriteLine("Get map failed");
+            popupRef.Show(response.StatusCode.ToString(), "Get map action");
+        }
+    }
+
+    private async Task Gather()
+    {
+        autoGather = !autoGather;
+        while (autoGather)
+        {
+            await GatherAction();
+        }
+    }
+
+    private async Task GatherAction()
+    {
+        var client = new RestClient("https://api.artifactsmmo.com/my/pancake/action/gathering");
+        var request = new RestRequest(Method.POST);
+        request.AddHeader("Content-Type", "application/json");
+        request.AddHeader("Accept", "application/json");
+        request.AddHeader("Authorization", "Bearer " + token);
+        IRestResponse response = client.Execute(request);
+        if (response.IsSuccessful)
+        {
+            Console.WriteLine("Gather success");
+            var jsonResponse = JsonDocument.Parse(response.Content);
+            totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
+            remainingSeconds = totalCooldownSeconds;
+
+            popupRef.Show(remainingSeconds.ToString(), "Gather action");
+            await Task.Delay(remainingSeconds * 1000);
+        }
+        else
+        {
+            Console.WriteLine("Gather failed");
+            if((int)response.StatusCode == 497)
+            {
+                autoGather = false;
+            }
+            popupRef.Show(response.StatusCode.ToString(), "Gather action");
+        }
+    }
+
+    private async Task FetchMapData()
+    {
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var url = "https://api.artifactsmmo.com/maps";
+        if (!string.IsNullOrEmpty(contentType))
+        {
+            url += $"?content_type={contentType}";
+        }
+        var response = await client.GetAsync(url);
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var mapData = JsonDocument.Parse(jsonResponse);
+            var coordinatesList = mapData.RootElement.GetProperty("data").EnumerateArray().Select(item => new Coordinate
+            {
+                Name = item.GetProperty("name").GetString() ?? string.Empty,
+                X = item.GetProperty("x").GetInt32(),
+                Y = item.GetProperty("y").GetInt32(),
+                Content = new ResourceContent
+                {
+                    Code = item.TryGetProperty("content", out JsonElement contentElement) && contentElement.ValueKind != JsonValueKind.Null && contentElement.TryGetProperty("code", out JsonElement codeElement) ? codeElement.GetString() ?? string.Empty : string.Empty,
+                    Type = contentElement.ValueKind != JsonValueKind.Null && contentElement.TryGetProperty("type", out JsonElement typeElement) ? typeElement.GetString() ?? string.Empty : string.Empty
+                }
+            }).ToList();
+            foreach(var coord in coordinatesList)
+            {
+                if(coord.Content != null)
+                    Console.WriteLine($"Name: {coord.Name}, X: {coord.X}, Y: {coord.Y}, Type: {coord.Content.Type}, Code: {coord.Content.Code}");
+            }
+            if (coordinatesList != null)
+            {
+                coordinates = coordinatesList;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        else
+        {
+            Console.WriteLine("Fetch map data failed");
+            popupRef.Show(response.StatusCode.ToString(), "Fetch map data action");
+        }
+    }
+
+    private async Task FetchCraftData()
+    {
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var url = $"https://api.artifactsmmo.com/items?craft_material={craftMaterial}";
+        var response = await client.GetAsync(url);
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var craftData = JsonDocument.Parse(jsonResponse);
+            var craftItemsList = craftData.RootElement.GetProperty("data").EnumerateArray().Select(item => new CraftItem
+            {
+                Name = item.GetProperty("name").GetString() ?? string.Empty,
+                Code = item.GetProperty("code").GetString() ?? string.Empty,
+                Level = item.GetProperty("level").GetInt32(),
+                Type = item.GetProperty("type").GetString() ?? string.Empty,
+                Subtype = item.GetProperty("subtype").GetString() ?? string.Empty,
+                Description = item.GetProperty("description").GetString() ?? string.Empty,
+                Effects = item.GetProperty("effects").EnumerateArray().Select(effect => new Effect
+                {
+                    Code = effect.GetProperty("code").GetString() ?? string.Empty,
+                    Value = effect.GetProperty("value").GetInt32()
+                }).ToList(),
+                Craft = new Crafts
+                {
+                    Skill = item.GetProperty("craft").GetProperty("skill").GetString() ?? string.Empty,
+                    Level = item.GetProperty("craft").GetProperty("level").GetInt32(),
+                    Items = item.GetProperty("craft").GetProperty("items").EnumerateArray().Select(craftItem => new CraftItemDetail
+                    {
+                        Code = craftItem.GetProperty("code").GetString() ?? string.Empty,
+                        Quantity = craftItem.GetProperty("quantity").GetInt32()
+                    }).ToList(),
+                    Quantity = item.GetProperty("craft").GetProperty("quantity").GetInt32()
+                },
+                Tradeable = item.GetProperty("tradeable").GetBoolean()
+            }).ToList();
+            if (craftItemsList != null)
+            {
+                craftItems = craftItemsList;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        else
+        {
+            Console.WriteLine("Fetch craft data failed");
+            popupRef.Show(response.StatusCode.ToString(), "Fetch craft data action");
+        }
+    }
+
+    private async Task CraftItemAction()
+    {
+        var client = new RestClient("https://api.artifactsmmo.com/my/pancake/action/crafting");
+        var request = new RestRequest(Method.POST);
+        request.AddHeader("Content-Type", "application/json");
+        request.AddHeader("Accept", "application/json");
+        request.AddHeader("Authorization", "Bearer " + token);
+        var body = new { code = craftItemCode, quantity = craftItemQuantity };
+        request.AddJsonBody(body);
+        IRestResponse response = await client.ExecuteAsync(request);
+        if (response.IsSuccessful)
+        {
+            var jsonResponse = JsonDocument.Parse(response.Content);
+            totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
+            remainingSeconds = totalCooldownSeconds;
+            Console.WriteLine("Craft success");
+            popupRef.Show("Craft success", "Craft action");
+        }
+        else
+        {
+            Console.WriteLine("Craft failed");
+            popupRef.Show(response.StatusCode.ToString(), "Craft action");
+        }
+    }
+
+    private void SortByType()
+    {
+        if (sortAscending)
+        {
+            coordinates = coordinates.OrderBy(c => c.Content?.Type).ToList();
+        }
+        else
+        {
+            coordinates = coordinates.OrderByDescending(c => c.Content?.Type).ToList();
+        }
+        sortAscending = !sortAscending;
+    }
+
+    private void ToggleInventorySection()
+    {
+        isInventorySectionVisible = !isInventorySectionVisible;
+    }
+
+    private void ToggleStatsSection()
+    {
+        isStatsSectionVisible = !isStatsSectionVisible;
+        StateHasChanged();
+    }
+
+    private void ToggleSkillsSection()
+    {
+        isSkillsSectionVisible = !isSkillsSectionVisible;
+    }
+    private void ToggleCharInventorySection()
+    {
+        isCharInventorySectionVisible = !isCharInventorySectionVisible;
+    }
+
+    private async Task FetchCharacterData()
+    {
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var url = $"https://api.artifactsmmo.com/characters/{characterName}";
+        var response = await client.GetAsync(url);
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var characterJson = JsonDocument.Parse(jsonResponse);
+            var character = characterJson.RootElement.GetProperty("data");
+            characterData = new CharacterData
+            {
+                Name = character.GetProperty("name").GetString(),
+                Account = character.GetProperty("account").GetString(),
+                Skin = character.GetProperty("skin").GetString(),
+                Level = character.GetProperty("level").GetInt32(),
+                Xp = character.GetProperty("xp").GetInt32(),
+                MaxXp = character.GetProperty("max_xp").GetInt32(),
+                Gold = character.GetProperty("gold").GetInt32(),
+                Speed = character.GetProperty("speed").GetInt32(),
+                MiningLevel = character.GetProperty("mining_level").GetInt32(),
+                MiningXp = character.GetProperty("mining_xp").GetInt32(),
+                MiningMaxXp = character.GetProperty("mining_max_xp").GetInt32(),
+                WoodcuttingLevel = character.GetProperty("woodcutting_level").GetInt32(),
+                WoodcuttingXp = character.GetProperty("woodcutting_xp").GetInt32(),
+                WoodcuttingMaxXp = character.GetProperty("woodcutting_max_xp").GetInt32(),
+                FishingLevel = character.GetProperty("fishing_level").GetInt32(),
+                FishingXp = character.GetProperty("fishing_xp").GetInt32(),
+                FishingMaxXp = character.GetProperty("fishing_max_xp").GetInt32(),
+                WeaponcraftingLevel = character.GetProperty("weaponcrafting_level").GetInt32(),
+                WeaponcraftingXp = character.GetProperty("weaponcrafting_xp").GetInt32(),
+                WeaponcraftingMaxXp = character.GetProperty("weaponcrafting_max_xp").GetInt32(),
+                GearcraftingLevel = character.GetProperty("gearcrafting_level").GetInt32(),
+                GearcraftingXp = character.GetProperty("gearcrafting_xp").GetInt32(),
+                GearcraftingMaxXp = character.GetProperty("gearcrafting_max_xp").GetInt32(),
+                JewelrycraftingLevel = character.GetProperty("jewelrycrafting_level").GetInt32(),
+                JewelrycraftingXp = character.GetProperty("jewelrycrafting_xp").GetInt32(),
+                JewelrycraftingMaxXp = character.GetProperty("jewelrycrafting_max_xp").GetInt32(),
+                CookingLevel = character.GetProperty("cooking_level").GetInt32(),
+                CookingXp = character.GetProperty("cooking_xp").GetInt32(),
+                CookingMaxXp = character.GetProperty("cooking_max_xp").GetInt32(),
+                AlchemyLevel = character.GetProperty("alchemy_level").GetInt32(),
+                AlchemyXp = character.GetProperty("alchemy_xp").GetInt32(),
+                AlchemyMaxXp = character.GetProperty("alchemy_max_xp").GetInt32(),
+                Hp = character.GetProperty("hp").GetInt32(),
+                MaxHp = character.GetProperty("max_hp").GetInt32(),
+                Haste = character.GetProperty("haste").GetInt32(),
+                CriticalStrike = character.GetProperty("critical_strike").GetInt32(),
+                Wisdom = character.GetProperty("wisdom").GetInt32(),
+                Prospecting = character.GetProperty("prospecting").GetInt32(),
+                AttackFire = character.GetProperty("attack_fire").GetInt32(),
+                AttackEarth = character.GetProperty("attack_earth").GetInt32(),
+                AttackWater = character.GetProperty("attack_water").GetInt32(),
+                AttackAir = character.GetProperty("attack_air").GetInt32(),
+                Dmg = character.GetProperty("dmg").GetInt32(),
+                DmgFire = character.GetProperty("dmg_fire").GetInt32(),
+                DmgEarth = character.GetProperty("dmg_earth").GetInt32(),
+                DmgWater = character.GetProperty("dmg_water").GetInt32(),
+                DmgAir = character.GetProperty("dmg_air").GetInt32(),
+                ResFire = character.GetProperty("res_fire").GetInt32(),
+                ResEarth = character.GetProperty("res_earth").GetInt32(),
+                ResWater = character.GetProperty("res_water").GetInt32(),
+                ResAir = character.GetProperty("res_air").GetInt32(),
+                X = character.GetProperty("x").GetInt32(),
+                Y = character.GetProperty("y").GetInt32(),
+                Cooldown = character.GetProperty("cooldown").GetInt32(),
+                CooldownExpiration = character.GetProperty("cooldown_expiration").GetDateTime(),
+                WeaponSlot = character.GetProperty("weapon_slot").GetString(),
+                RuneSlot = character.GetProperty("rune_slot").GetString(),
+                ShieldSlot = character.GetProperty("shield_slot").GetString(),
+                HelmetSlot = character.GetProperty("helmet_slot").GetString(),
+                BodyArmorSlot = character.GetProperty("body_armor_slot").GetString(),
+                LegArmorSlot = character.GetProperty("leg_armor_slot").GetString(),
+                BootsSlot = character.GetProperty("boots_slot").GetString(),
+                Ring1Slot = character.GetProperty("ring1_slot").GetString(),
+                Ring2Slot = character.GetProperty("ring2_slot").GetString(),
+                AmuletSlot = character.GetProperty("amulet_slot").GetString(),
+                Artifact1Slot = character.GetProperty("artifact1_slot").GetString(),
+                Artifact2Slot = character.GetProperty("artifact2_slot").GetString(),
+                Artifact3Slot = character.GetProperty("artifact3_slot").GetString(),
+                Utility1Slot = character.GetProperty("utility1_slot").GetString(),
+                Utility1SlotQuantity = character.GetProperty("utility1_slot_quantity").GetInt32(),
+                Utility2Slot = character.GetProperty("utility2_slot").GetString(),
+                Utility2SlotQuantity = character.GetProperty("utility2_slot_quantity").GetInt32(),
+                BagSlot = character.GetProperty("bag_slot").GetString(),
+                Task = character.GetProperty("task").GetString(),
+                TaskType = character.GetProperty("task_type").GetString(),
+                TaskProgress = character.GetProperty("task_progress").GetInt32(),
+                TaskTotal = character.GetProperty("task_total").GetInt32(),
+                InventoryMaxItems = character.GetProperty("inventory_max_items").GetInt32(),
+                Inventory = character.GetProperty("inventory").EnumerateArray().Select(item => new InventoryItem
+                {
+                    Slot = item.GetProperty("slot").GetInt32(),
+                    Code = item.GetProperty("code").GetString(),
+                    Quantity = item.GetProperty("quantity").GetInt32()
+                }).Where(x => x.Quantity > 0).ToList()
+            };
+            await InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            Console.WriteLine("Fetch character data failed");
+            popupRef.Show(response.StatusCode.ToString(), "Fetch character data action");
+        }
+    }
+
+    private string GetNonce()
+    {
+        return HttpContextAccessor.HttpContext?.Items["CSPNonce"] as string ?? string.Empty;
+    }
+
+    private bool IsActionButtonsDisabled => remainingSeconds > 0;
+    private string ActionButtonClass => remainingSeconds > 0 ? "btn btn-secondary" : "btn btn-primary";
+    private string GatherButtonClass => autoGather ? "btn btn-danger" : "btn btn-success";
+
+    private class Item
+    {
+        public string? Name { get; set; }
+        public int Quantity { get; set; }
+    }
+
+    private class Coordinate
+    {
+        public string Name { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public ResourceContent? Content { get; set; }
+    }
+
+    private class ResourceContent
+    {
+        public string Type { get; set; }
+        public string Code { get; set; }
+    }
+
+    private class CraftItem
+    {
+        public string Name { get; set; }
+        public string Code { get; set; }
+        public int Level { get; set; }
+        public string Type { get; set; }
+        public string Subtype { get; set; }
+        public string Description { get; set; }
+        public List<Effect> Effects { get; set; }
+        public Crafts Craft { get; set; }
+        public bool Tradeable { get; set; }
+    }
+
+    private class Effect
+    {
+        public string Code { get; set; }
+        public int Value { get; set; }
+    }
+
+    private class Crafts
+    {
+        public string Skill { get; set; }
+        public int Level { get; set; }
+        public List<CraftItemDetail> Items { get; set; }
+        public int Quantity { get; set; }
+    }
+
+    private class CraftItemDetail
+    {
+        public string Code { get; set; }
+        public int Quantity { get; set; }
+    }
+
+    private class CharacterData
+    {
+        public string Name { get; set; }
+        public string Account { get; set; }
+        public string Skin { get; set; }
+        public int Level { get; set; }
+        public int Xp { get; set; }
+        public int MaxXp { get; set; }
+        public int Gold { get; set; }
+        public int Speed { get; set; }
+        public int MiningLevel { get; set; }
+        public int MiningXp { get; set; }
+        public int MiningMaxXp { get; set; }
+        public int WoodcuttingLevel { get; set; }
+        public int WoodcuttingXp { get; set; }
+        public int WoodcuttingMaxXp { get; set; }
+        public int FishingLevel { get; set; }
+        public int FishingXp { get; set; }
+        public int FishingMaxXp { get; set; }
+        public int WeaponcraftingLevel { get; set; }
+        public int WeaponcraftingXp { get; set; }
+        public int WeaponcraftingMaxXp { get; set; }
+        public int GearcraftingLevel { get; set; }
+        public int GearcraftingXp { get; set; }
+        public int GearcraftingMaxXp { get; set; }
+        public int JewelrycraftingLevel { get; set; }
+        public int JewelrycraftingXp { get; set; }
+        public int JewelrycraftingMaxXp { get; set; }
+        public int CookingLevel { get; set; }
+        public int CookingXp { get; set; }
+        public int CookingMaxXp { get; set; }
+        public int AlchemyLevel { get; set; }
+        public int AlchemyXp { get; set; }
+        public int AlchemyMaxXp { get; set; }
+        public int Hp { get; set; }
+        public int MaxHp { get; set; }
+        public int Haste { get; set; }
+        public int CriticalStrike { get; set; }
+        public int Wisdom { get; set; }
+        public int Prospecting { get; set; }
+        public int AttackFire { get; set; }
+        public int AttackEarth { get; set; }
+        public int AttackWater { get; set; }
+        public int AttackAir { get; set; }
+        public int Dmg { get; set; }
+        public int DmgFire { get; set; }
+        public int DmgEarth { get; set; }
+        public int DmgWater { get; set; }
+        public int DmgAir { get; set; }
+        public int ResFire { get; set; }
+        public int ResEarth { get; set; }
+        public int ResWater { get; set; }
+        public int ResAir { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Cooldown { get; set; }
+        public DateTime CooldownExpiration { get; set; }
+        public string WeaponSlot { get; set; }
+        public string RuneSlot { get; set; }
+        public string ShieldSlot { get; set; }
+        public string HelmetSlot { get; set; }
+        public string BodyArmorSlot { get; set; }
+        public string LegArmorSlot { get; set; }
+        public string BootsSlot { get; set; }
+        public string Ring1Slot { get; set; }
+        public string Ring2Slot { get; set; }
+        public string AmuletSlot { get; set; }
+        public string Artifact1Slot { get; set; }
+        public string Artifact2Slot { get; set; }
+        public string Artifact3Slot { get; set; }
+        public string Utility1Slot { get; set; }
+        public int Utility1SlotQuantity { get; set; }
+        public string Utility2Slot { get; set; }
+        public int Utility2SlotQuantity { get; set; }
+        public string BagSlot { get; set; }
+        public string Task { get; set; }
+        public string TaskType { get; set; }
+        public int TaskProgress { get; set; }
+        public int TaskTotal { get; set; }
+        public int InventoryMaxItems { get; set; }
+        public List<InventoryItem> Inventory { get; set; }
+    }
+
+    private class InventoryItem
+    {
+        public int Slot { get; set; }
+        public string Code { get; set; }
+        public int Quantity { get; set; }
+    }
+}
