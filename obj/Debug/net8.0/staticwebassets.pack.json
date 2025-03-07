@@ -1,23 +1,23 @@
 {
   "Files": [
     {
-      "Id": "C:\\ArtifactsMMO\\Artifacts\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\Artifacts.bundle.scp.css",
+      "Id": "C:\\Users\\rgraham04\\source\\FrontEndTest\\blazing-artifact\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\Artifacts.bundle.scp.css",
       "PackagePath": "staticwebassets\\Artifacts.bundle.scp.css"
     },
     {
-      "Id": "C:\\ArtifactsMMO\\Artifacts\\wwwroot\\app.css",
+      "Id": "C:\\Users\\rgraham04\\source\\FrontEndTest\\blazing-artifact\\wwwroot\\app.css",
       "PackagePath": "staticwebassets\\app.css"
     },
     {
-      "Id": "C:\\ArtifactsMMO\\Artifacts\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "Id": "C:\\Users\\rgraham04\\source\\FrontEndTest\\blazing-artifact\\wwwroot\\bootstrap\\bootstrap.min.css",
       "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
     },
     {
-      "Id": "C:\\ArtifactsMMO\\Artifacts\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "Id": "C:\\Users\\rgraham04\\source\\FrontEndTest\\blazing-artifact\\wwwroot\\bootstrap\\bootstrap.min.css.map",
       "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
     },
     {
-      "Id": "C:\\ArtifactsMMO\\Artifacts\\wwwroot\\favicon.png",
+      "Id": "C:\\Users\\rgraham04\\source\\FrontEndTest\\blazing-artifact\\wwwroot\\favicon.png",
       "PackagePath": "staticwebassets\\favicon.png"
     },
     {

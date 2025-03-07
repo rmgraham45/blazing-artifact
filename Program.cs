@@ -36,7 +36,8 @@ app.Use(async (context, next) =>
 {
     var nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
     context.Items["CSPNonce"] = nonce;
-    context.Response.Headers.Add("Content-Security-Policy", $"default-src 'self'; style-src 'self' 'nonce-{nonce}'; img-src 'self' data:;");
+    // Allow inline styles for Radzen components
+    context.Response.Headers["Content-Security-Policy"] = $"default-src 'self'; style-src 'self' 'unsafe-inline' 'nonce-{nonce}'; img-src 'self' data:; font-src 'self' data:;";
     await next();
 });
 app.MapRazorComponents<App>()

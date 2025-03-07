@@ -7,38 +7,54 @@
 @using RestSharp.Authenticators
 @using System.Text.Json
 @using System.Timers
-@using Radzen.Blazor
 @using Radzen
 @using Radzen.Blazor
 
 @inject IHttpContextAccessor HttpContextAccessor
+@inject NotificationService NotificationService
 
 <PageTitle>Let's move together</PageTitle>
 
+<RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
+    <RadzenStack Gap="1rem">
+        <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">Time to move</RadzenText>
+        
+        <RadzenProgressBar Value="@progressWidth" ShowValue="true" Style="height: 20px;" class="rz-mb-3" />
+        
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" JustifyContent="JustifyContent.Start" Class="rz-mb-3">
+            <RadzenButton ButtonStyle="@(IsActionButtonsDisabled ? ButtonStyle.Light : ButtonStyle.Primary)" 
+                        Text="Move" 
+                        Icon="directions_walk"
+                        Click="@MoveAction" 
+                        Disabled="@IsActionButtonsDisabled" />
+            <RadzenButton ButtonStyle="@(autoGather ? ButtonStyle.Danger : ButtonStyle.Success)" 
+                        Text="Gather" 
+                        Icon="@(autoGather ? "stop" : "play_arrow")"
+                        Click="@Gather" 
+                        Disabled="@IsActionButtonsDisabled" />
+            <RadzenButton ButtonStyle="ButtonStyle.Info" 
+                        Text="Fetch Map Data" 
+                        Icon="map"
+                        Click="@FetchMapData" />
+        </RadzenStack>
 
-<link href="styles.css" rel="stylesheet" />
+        <RadzenStack Gap="0.5rem" class="rz-p-2 rz-border-radius-1" Style="background-color: var(--rz-base-100);">
+            <RadzenText TextStyle="TextStyle.Subtitle1">Current Position</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem">
+                <RadzenText TextStyle="TextStyle.Body1">X: @currentXCoordinate</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">Y: @currentYCoordinate</RadzenText>
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
 
-<h1>Time to move</h1>
-
-<div class="progress">
-    <div class="progress-bar" role="progressbar" style="width: @progressWidth%;" aria-valuenow="@progressWidth" aria-valuemin="0" aria-valuemax="100">@progressWidth%</div>
-</div>
-<div class="mt-3">
-    <button class="@ActionButtonClass" @onclick="MoveAction" disabled="@IsActionButtonsDisabled">Move</button>
-    <button class="@GatherButtonClass" @onclick="Gather" disabled="@IsActionButtonsDisabled">Gather</button>
-    <button class="btn btn-primary" @onclick="FetchMapData">Fetch Map Data</button>
-</div>
-
-<div>
-    <p>Current X Coordinate: @currentXCoordinate</p>
-    <p>Current Y Coordinate: @currentYCoordinate</p>
-</div>
-
-<h2>Character Information</h2>
-<div class="mb-3">
-    <input type="text" class="form-control" placeholder="Character Name" @bind="characterName" />
-    <button class="btn btn-primary mt-2" @onclick="FetchCharacterData">Fetch Character Data</button>
-</div>
+<RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
+    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-3">Character Information</RadzenText>
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center" Class="rz-mb-3">
+        <RadzenTextBox Placeholder="Character Name" @bind-Value="characterName" Style="width: 200px;" />
+        <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Fetch Character Data" Icon="search" Click="@FetchCharacterData" />
+    </RadzenStack>
+</RadzenCard>
 @if (characterData != null)
 {
     <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Server" @bind-SelectedIndex=@selectedIndex>
@@ -57,73 +73,89 @@
                 </RadzenCard>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Skills">
-                <div class="row">
-                    <div class="col-6">
-                        <p>Mining: @characterData.MiningLevel (XP: @characterData.MiningXp / @characterData.MiningMaxXp)</p>
-                        <p>Woodcutting: @characterData.WoodcuttingLevel (XP: @characterData.WoodcuttingXp / @characterData.WoodcuttingMaxXp)</p>
-                        <p>Fishing: @characterData.FishingLevel (XP: @characterData.FishingXp / @characterData.FishingMaxXp)</p>
-                        <p>Weaponcrafting: @characterData.WeaponcraftingLevel (XP: @characterData.WeaponcraftingXp / @characterData.WeaponcraftingMaxXp)</p>
-                        <p>Gearcrafting: @characterData.GearcraftingLevel (XP: @characterData.GearcraftingXp / @characterData.GearcraftingMaxXp)</p>
-                    </div>
-                    <div class="col-6">
-                        <p>Jewelrycrafting: @characterData.JewelrycraftingLevel (XP: @characterData.JewelrycraftingXp / @characterData.JewelrycraftingMaxXp)</p>
-                        <p>Cooking: @characterData.CookingLevel (XP: @characterData.CookingXp / @characterData.CookingMaxXp)</p>
-                        <p>Alchemy: @characterData.AlchemyLevel (XP: @characterData.AlchemyXp / @characterData.AlchemyMaxXp)</p>
-                    </div>
-                </div>
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Mining: @characterData.MiningLevel (XP: @characterData.MiningXp / @characterData.MiningMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Woodcutting: @characterData.WoodcuttingLevel (XP: @characterData.WoodcuttingXp / @characterData.WoodcuttingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Fishing: @characterData.FishingLevel (XP: @characterData.FishingXp / @characterData.FishingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Weaponcrafting: @characterData.WeaponcraftingLevel (XP: @characterData.WeaponcraftingXp / @characterData.WeaponcraftingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Gearcrafting: @characterData.GearcraftingLevel (XP: @characterData.GearcraftingXp / @characterData.GearcraftingMaxXp)</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Jewelrycrafting: @characterData.JewelrycraftingLevel (XP: @characterData.JewelrycraftingXp / @characterData.JewelrycraftingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Cooking: @characterData.CookingLevel (XP: @characterData.CookingXp / @characterData.CookingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Alchemy: @characterData.AlchemyLevel (XP: @characterData.AlchemyXp / @characterData.AlchemyMaxXp)</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Stats">
-                <div class="row">
-                    <div class="col-6">
-                        <p>HP: @characterData.Hp / @characterData.MaxHp</p>
-                        <p>Haste: @characterData.Haste</p>
-                        <p>Critical Strike: @characterData.CriticalStrike</p>
-                        <p>Wisdom: @characterData.Wisdom</p>
-                        <p>Prospecting: @characterData.Prospecting</p>
-                    </div>
-                    <div class="col-6">
-                        <p>Attack Fire: @characterData.AttackFire</p>
-                        <p>Attack Earth: @characterData.AttackEarth</p>
-                        <p>Attack Water: @characterData.AttackWater</p>
-                        <p>Attack Air: @characterData.AttackAir</p>
-                        <p>Damage: @characterData.Dmg</p>
-                        <p>Damage Fire: @characterData.DmgFire</p>
-                        <p>Damage Earth: @characterData.DmgEarth</p>
-                        <p>Damage Water: @characterData.DmgWater</p>
-                        <p>Damage Air: @characterData.DmgAir</p>
-                        <p>Resistance Fire: @characterData.ResFire</p>
-                        <p>Resistance Earth: @characterData.ResEarth</p>
-                        <p>Resistance Water: @characterData.ResWater</p>
-                        <p>Resistance Air: @characterData.ResAir</p>
-                    </div>
-                </div>
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">HP: @characterData.Hp / @characterData.MaxHp</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Haste: @characterData.Haste</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Critical Strike: @characterData.CriticalStrike</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Wisdom: @characterData.Wisdom</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Prospecting: @characterData.Prospecting</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Attack Fire: @characterData.AttackFire</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Attack Earth: @characterData.AttackEarth</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Attack Water: @characterData.AttackWater</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Attack Air: @characterData.AttackAir</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage: @characterData.Dmg</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage Fire: @characterData.DmgFire</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage Earth: @characterData.DmgEarth</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage Water: @characterData.DmgWater</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage Air: @characterData.DmgAir</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Resistance Fire: @characterData.ResFire</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Resistance Earth: @characterData.ResEarth</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Resistance Water: @characterData.ResWater</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Resistance Air: @characterData.ResAir</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Position">
-                <p>X: @characterData.X</p>
-                <p>Y: @characterData.Y</p>
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Body1">X: @characterData.X</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">Y: @characterData.Y</RadzenText>
+                </RadzenStack>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Cooldown">
-                <p>Cooldown: @characterData.Cooldown</p>
-                <p>Cooldown Expiration: @characterData.CooldownExpiration</p>
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Body1">Cooldown: @characterData.Cooldown</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">Cooldown Expiration: @characterData.CooldownExpiration</RadzenText>
+                </RadzenStack>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Equipment">
-                <div class="row">
-                    <div class="col-6">
-                        <p>Leg Armor Slot: @characterData.LegArmorSlot</p>
-                        <p>Boots Slot: @characterData.BootsSlot</p>
-                    </div>
-                    <div class="col-6">
-                        <p>Ring1 Slot: @characterData.Ring1Slot</p>
-                        <p>Ring2 Slot: @characterData.Ring2Slot</p>
-                        <p>Amulet Slot: @characterData.AmuletSlot</p>
-                        <p>Artifact1 Slot: @characterData.Artifact1Slot</p>
-                        <p>Artifact2 Slot: @characterData.Artifact2Slot</p>
-                        <p>Artifact3 Slot: @characterData.Artifact3Slot</p>
-                        <p>Utility1 Slot: @characterData.Utility1Slot (Quantity: @characterData.Utility1SlotQuantity)</p>
-                        <p>Utility2 Slot: @characterData.Utility2Slot (Quantity: @characterData.Utility2SlotQuantity)</p>
-                        <p>Bag Slot: @characterData.BagSlot</p>
-                    </div>
-                </div>
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Leg Armor Slot: @characterData.LegArmorSlot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Boots Slot: @characterData.BootsSlot</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Ring1 Slot: @characterData.Ring1Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Ring2 Slot: @characterData.Ring2Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Amulet Slot: @characterData.AmuletSlot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Artifact1 Slot: @characterData.Artifact1Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Artifact2 Slot: @characterData.Artifact2Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Artifact3 Slot: @characterData.Artifact3Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Utility1 Slot: @characterData.Utility1Slot (Quantity: @characterData.Utility1SlotQuantity)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Utility2 Slot: @characterData.Utility2Slot (Quantity: @characterData.Utility2SlotQuantity)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Bag Slot: @characterData.BagSlot</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
             </RadzenTabsItem>
             <RadzenTabsItem Text="Inventory">
                 <RadzenDataGrid Data="@characterData.Inventory">
@@ -137,118 +169,123 @@
     </RadzenTabs>
 }
 
-<h2>Craft Item</h2>
-<div class="mb-3">
-    <input type="text" class="form-control" placeholder="Item Code" @bind="craftItemCode" />
-    <input type="number" class="form-control" placeholder="Quantity" @bind="craftItemQuantity" />
-    <button class="btn btn-primary mt-2" @onclick="CraftItemAction">Craft Item</button>
-</div>
+<RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
+    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-3">Craft Item</RadzenText>
+    <RadzenStack Gap="1rem" Class="rz-mb-3">
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+            <RadzenStack Gap="0.5rem" Style="width: 200px;">
+                <RadzenText TextStyle="TextStyle.Caption">Item Code</RadzenText>
+                <RadzenTextBox Placeholder="Enter item code" @bind-Value="craftItemCode" />
+            </RadzenStack>
+            <RadzenStack Gap="0.5rem" Style="width: 120px;">
+                <RadzenText TextStyle="TextStyle.Caption">Quantity</RadzenText>
+                <RadzenNumeric Placeholder="Qty" @bind-Value="craftItemQuantity" Min="1" />
+            </RadzenStack>
+            <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Craft Item" Icon="build" Click="@CraftItemAction" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
 
-<h2>
-    Coordinates
-    <button class="btn btn-link" @onclick="ToggleCoordinatesTable">
-        Toggle
-    </button>
-</h2>
-@if (isCoordinatesTableVisible)
-{
-    <div id="coordinatesTable">
-        <input type="text" class="form-control" placeholder="Content Type" @bind="contentType" />
-        <button class="btn btn-primary" @onclick="FetchMapData">Fetch Map Data</button>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>X</th>
-                    <th>Y</th>
-                    <th @onclick="SortByType" style="cursor: pointer;">Resource Type</th>
-                    <th>Resource Code</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var coord in coordinates)
-                {
-                    <tr>
-                        <td>@coord.Name</td>
-                        <td>@coord.X</td>
-                        <td>@coord.Y</td>
-                        <td>@coord.Content?.Type</td>
-                        <td>@coord.Content?.Code</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+<RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+        <RadzenText TextStyle="TextStyle.H4" class="rz-mb-0">Coordinates</RadzenText>
+        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="@(isCoordinatesTableVisible ? "visibility_off" : "visibility")" Text="@(isCoordinatesTableVisible ? "Hide" : "Show")" Click="@ToggleCoordinatesTable" />
+    </RadzenStack>
+    
+    @if (isCoordinatesTableVisible)
+    {
+        <RadzenStack Gap="1rem" Class="rz-mt-4">
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.End">
+                <RadzenStack Gap="0.5rem" Style="width: 200px;">
+                    <RadzenText TextStyle="TextStyle.Caption">Content Type</RadzenText>
+                    <RadzenTextBox Placeholder="Filter by type" @bind-Value="contentType" />
+                </RadzenStack>
+                <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Fetch Map Data" Icon="refresh" Click="@FetchMapData" />
+            </RadzenStack>
+            
+            <RadzenDataGrid Data="@coordinates" TItem="Coordinate" AllowSorting="true" AllowFiltering="true" 
+                           Style="height: 400px" AllowColumnResize="true" AllowPaging="true" PageSize="10"
+                           FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                           class="rz-shadow-1">
+                <Columns>
+                    <RadzenDataGridColumn TItem="Coordinate" Property="Name" Title="Name" Width="150px" />
+                    <RadzenDataGridColumn TItem="Coordinate" Property="X" Title="X" Width="80px" />
+                    <RadzenDataGridColumn TItem="Coordinate" Property="Y" Title="Y" Width="80px" />
+                    <RadzenDataGridColumn TItem="Coordinate" Property="Content.Type" Title="Resource Type" 
+                                        SortProperty="Content.Type" Width="150px" />
+                    <RadzenDataGridColumn TItem="Coordinate" Property="Content.Code" Title="Resource Code" Width="150px" />
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenStack>
+    }
+</RadzenCard>
 
-<h2>
-    Craft Data
-</h2>
-<div>
-    <input type="text" class="form-control" placeholder="Craft Material" @bind="craftMaterial" />
-    <button class="btn btn-primary" @onclick="FetchCraftData">Fetch Craft Data</button>
-</div>
-@if (craftItems.Any())
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Code</th>
-                <th>Level</th>
-                <th>Type</th>
-                <th>Subtype</th>
-                <th>Description</th>
-                <th>Effects</th>
-                <th>Craft Skill</th>
-                <th>Craft Level</th>
-                <th>Craft Items</th>
-                <th>Craft Quantity</th>
-                <th>Tradeable</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in craftItems)
-            {
-                <tr>
-                    <td>@item.Name</td>
-                    <td>@item.Code</td>
-                    <td>@item.Level</td>
-                    <td>@item.Type</td>
-                    <td>@item.Subtype</td>
-                    <td>@item.Description</td>
-                    <td>
-                        @foreach (var effect in item.Effects)
-                        {
-                            <div>@effect.Code: @effect.Value</div>
-                        }
-                    </td>
-                    <td>@item.Craft.Skill</td>
-                    <td>@item.Craft.Level</td>
-                    <td>
-                        @foreach (var craftItem in item.Craft.Items)
-                        {
-                            <div>@craftItem.Code: @craftItem.Quantity</div>
-                        }
-                    </td>
-                    <td>@item.Craft.Quantity</td>
-                    <td>@item.Tradeable</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
+    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-3">Craft Data</RadzenText>
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.End" Class="rz-mb-4">
+        <RadzenStack Gap="0.5rem" Style="width: 200px;">
+            <RadzenText TextStyle="TextStyle.Caption">Craft Material</RadzenText>
+            <RadzenTextBox Placeholder="Enter material" @bind-Value="craftMaterial" />
+        </RadzenStack>
+        <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Fetch Craft Data" Icon="search" Click="@FetchCraftData" />
+    </RadzenStack>
+    
+    @if (craftItems.Any())
+    {
+        <RadzenDataGrid Data="@craftItems" TItem="CraftItem" AllowSorting="true" AllowFiltering="true" 
+                       Style="height: 500px" AllowColumnResize="true" AllowPaging="true" PageSize="10"
+                       FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                       class="rz-shadow-1">
+            <Columns>
+                <RadzenDataGridColumn TItem="CraftItem" Property="Name" Title="Name" Width="150px" />
+                <RadzenDataGridColumn TItem="CraftItem" Property="Code" Title="Code" Width="100px" />
+                <RadzenDataGridColumn TItem="CraftItem" Property="Level" Title="Level" Width="80px" />
+                <RadzenDataGridColumn TItem="CraftItem" Property="Type" Title="Type" Width="120px" />
+                <RadzenDataGridColumn TItem="CraftItem" Property="Subtype" Title="Subtype" Width="120px" />
+                <RadzenDataGridColumn TItem="CraftItem" Property="Description" Title="Description" Width="200px" />
+                <RadzenDataGridColumn TItem="CraftItem" Title="Effects" Sortable="false" Width="150px">
+                    <Template Context="item">
+                        <RadzenStack Gap="0.5rem">
+                            @foreach (var effect in item.Effects)
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{effect.Code}: {effect.Value}")" />
+                            }
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CraftItem" Property="Craft.Skill" Title="Craft Skill" Width="120px" />
+                <RadzenDataGridColumn TItem="CraftItem" Property="Craft.Level" Title="Craft Level" Width="100px" />
+                <RadzenDataGridColumn TItem="CraftItem" Title="Craft Items" Sortable="false" Width="150px">
+                    <Template Context="item">
+                        <RadzenStack Gap="0.5rem">
+                            @foreach (var craftItem in item.Craft.Items)
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@($"{craftItem.Code}: {craftItem.Quantity}")" />
+                            }
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CraftItem" Property="Craft.Quantity" Title="Craft Quantity" Width="120px" />
+                <RadzenDataGridColumn TItem="CraftItem" Property="Tradeable" Title="Tradeable" Width="100px">
+                    <Template Context="item">
+                        <RadzenIcon Icon="@(item.Tradeable ? "check_circle" : "cancel")" 
+                                   IconColor="@(item.Tradeable ? "var(--rz-success)" : "var(--rz-danger)")" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>
 
 @code {
     private int yCoordinate { get; set; }
     private int xCoordinate { get; set; }
     private int currentXCoordinate { get; set; }
     private int currentYCoordinate { get; set; }
-    private Popup popupRef;
     private bool autoGather = false;
     private string token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImdyYWhhbXJtNDVAZ21haWwuY29tIiwicGFzc3dvcmRfY2hhbmdlZCI6IiJ9.XjKyYTICSWCNv4irW5R52Zdkxc4wrQPhLheDtvlnnGQ";
-    private Timer timer;
-    private Timer progressTimer;
+    private Timer? timer;
+    private Timer? progressTimer;
     private int remainingSeconds;
     private int totalCooldownSeconds;
     private double progressWidth;
@@ -261,13 +298,13 @@
     private List<CraftItem> craftItems = new List<CraftItem>();
     private bool isStatsSectionVisible = false;
     private string characterName = "pancake";
-    private CharacterData characterData = null;
+    private CharacterData? characterData = null;
     private bool isCharInventorySectionVisible = false;
     private string craftItemCode = string.Empty;
     private int craftItemQuantity = 1;
     private string craftMaterial = string.Empty;
     private bool isSkillsSectionVisible = false;
-    int selectedIndex = 0;
+    private int selectedIndex = 0;
 
 
     protected override void OnInitialized()
@@ -281,12 +318,12 @@
         progressTimer.Start();
     }
 
-    private void TimerElapsed(object sender, ElapsedEventArgs e)
+    private void TimerElapsed(object? sender, ElapsedEventArgs e)
     {
         _ = UpdateCoordinates();
     }
 
-    private void ProgressTimerElapsed(object sender, ElapsedEventArgs e)
+    private void ProgressTimerElapsed(object? sender, ElapsedEventArgs e)
     {
         if (remainingSeconds > 0)
         {
@@ -348,12 +385,12 @@
             totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
             remainingSeconds = totalCooldownSeconds;
             Console.WriteLine("Move success");
-            popupRef.Show("Move success", "Move action");
+            NotificationService.Notify(NotificationSeverity.Success, "Move action", "Move success");
         }
         else
         {
             Console.WriteLine("Move failed");
-            popupRef.Show(response.StatusCode.ToString(), "Move action");
+            NotificationService.Notify(NotificationSeverity.Error, "Move action", response.StatusCode.ToString());
         }
     }
 
@@ -365,12 +402,12 @@
         if (response.IsSuccessStatusCode)
         {
             Console.WriteLine("Get map success");
-            popupRef.Show("Get map success", "Get map action");
+            NotificationService.Notify(NotificationSeverity.Success, "Get map action", "Get map success");
         }
         else
         {
             Console.WriteLine("Get map failed");
-            popupRef.Show(response.StatusCode.ToString(), "Get map action");
+            NotificationService.Notify(NotificationSeverity.Error, "Get map action", response.StatusCode.ToString());
         }
     }
 
@@ -398,7 +435,7 @@
             totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
             remainingSeconds = totalCooldownSeconds;
 
-            popupRef.Show(remainingSeconds.ToString(), "Gather action");
+            NotificationService.Notify(NotificationSeverity.Success, "Gather action", remainingSeconds.ToString());
             await Task.Delay(remainingSeconds * 1000);
         }
         else
@@ -408,7 +445,7 @@
             {
                 autoGather = false;
             }
-            popupRef.Show(response.StatusCode.ToString(), "Gather action");
+            NotificationService.Notify(NotificationSeverity.Error, "Gather action", response.StatusCode.ToString());
         }
     }
 
@@ -451,7 +488,7 @@
         else
         {
             Console.WriteLine("Fetch map data failed");
-            popupRef.Show(response.StatusCode.ToString(), "Fetch map data action");
+            NotificationService.Notify(NotificationSeverity.Error, "Fetch map data action", response.StatusCode.ToString());
         }
     }
 
@@ -500,7 +537,7 @@
         else
         {
             Console.WriteLine("Fetch craft data failed");
-            popupRef.Show(response.StatusCode.ToString(), "Fetch craft data action");
+            NotificationService.Notify(NotificationSeverity.Error, "Fetch craft data action", response.StatusCode.ToString());
         }
     }
 
@@ -520,12 +557,12 @@
             totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
             remainingSeconds = totalCooldownSeconds;
             Console.WriteLine("Craft success");
-            popupRef.Show("Craft success", "Craft action");
+            NotificationService.Notify(NotificationSeverity.Success, "Craft action", "Craft success");
         }
         else
         {
             Console.WriteLine("Craft failed");
-            popupRef.Show(response.StatusCode.ToString(), "Craft action");
+            NotificationService.Notify(NotificationSeverity.Error, "Craft action", response.StatusCode.ToString());
         }
     }
 
@@ -665,7 +702,7 @@
         else
         {
             Console.WriteLine("Fetch character data failed");
-            popupRef.Show(response.StatusCode.ToString(), "Fetch character data action");
+            NotificationService.Notify(NotificationSeverity.Error, "Fetch character data action", response.StatusCode.ToString());
         }
     }
 
@@ -675,8 +712,6 @@
     }
 
     private bool IsActionButtonsDisabled => remainingSeconds > 0;
-    private string ActionButtonClass => remainingSeconds > 0 ? "btn btn-secondary" : "btn btn-primary";
-    private string GatherButtonClass => autoGather ? "btn btn-danger" : "btn btn-success";
 
     private class Item
     {
@@ -686,7 +721,7 @@
 
     private class Coordinate
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
         public ResourceContent? Content { get; set; }
@@ -694,48 +729,48 @@
 
     private class ResourceContent
     {
-        public string Type { get; set; }
-        public string Code { get; set; }
+        public required string Type { get; set; }
+        public required string Code { get; set; }
     }
 
     private class CraftItem
     {
-        public string Name { get; set; }
-        public string Code { get; set; }
+        public required string Name { get; set; }
+        public required string Code { get; set; }
         public int Level { get; set; }
-        public string Type { get; set; }
-        public string Subtype { get; set; }
-        public string Description { get; set; }
-        public List<Effect> Effects { get; set; }
-        public Crafts Craft { get; set; }
+        public required string Type { get; set; }
+        public required string Subtype { get; set; }
+        public required string Description { get; set; }
+        public required List<Effect> Effects { get; set; } = new();
+        public required Crafts Craft { get; set; }
         public bool Tradeable { get; set; }
     }
 
     private class Effect
     {
-        public string Code { get; set; }
+        public required string Code { get; set; }
         public int Value { get; set; }
     }
 
     private class Crafts
     {
-        public string Skill { get; set; }
+        public required string Skill { get; set; }
         public int Level { get; set; }
-        public List<CraftItemDetail> Items { get; set; }
+        public required List<CraftItemDetail> Items { get; set; } = new();
         public int Quantity { get; set; }
     }
 
     private class CraftItemDetail
     {
-        public string Code { get; set; }
+        public required string Code { get; set; }
         public int Quantity { get; set; }
     }
 
     private class CharacterData
     {
-        public string Name { get; set; }
-        public string Account { get; set; }
-        public string Skin { get; set; }
+        public required string Name { get; set; }
+        public required string Account { get; set; }
+        public required string Skin { get; set; }
         public int Level { get; set; }
         public int Xp { get; set; }
         public int MaxXp { get; set; }
@@ -788,36 +823,36 @@
         public int Y { get; set; }
         public int Cooldown { get; set; }
         public DateTime CooldownExpiration { get; set; }
-        public string WeaponSlot { get; set; }
-        public string RuneSlot { get; set; }
-        public string ShieldSlot { get; set; }
-        public string HelmetSlot { get; set; }
-        public string BodyArmorSlot { get; set; }
-        public string LegArmorSlot { get; set; }
-        public string BootsSlot { get; set; }
-        public string Ring1Slot { get; set; }
-        public string Ring2Slot { get; set; }
-        public string AmuletSlot { get; set; }
-        public string Artifact1Slot { get; set; }
-        public string Artifact2Slot { get; set; }
-        public string Artifact3Slot { get; set; }
-        public string Utility1Slot { get; set; }
+        public required string WeaponSlot { get; set; }
+        public required string RuneSlot { get; set; }
+        public required string ShieldSlot { get; set; }
+        public required string HelmetSlot { get; set; }
+        public required string BodyArmorSlot { get; set; }
+        public required string LegArmorSlot { get; set; }
+        public required string BootsSlot { get; set; }
+        public required string Ring1Slot { get; set; }
+        public required string Ring2Slot { get; set; }
+        public required string AmuletSlot { get; set; }
+        public required string Artifact1Slot { get; set; }
+        public required string Artifact2Slot { get; set; }
+        public required string Artifact3Slot { get; set; }
+        public required string Utility1Slot { get; set; }
         public int Utility1SlotQuantity { get; set; }
-        public string Utility2Slot { get; set; }
+        public required string Utility2Slot { get; set; }
         public int Utility2SlotQuantity { get; set; }
-        public string BagSlot { get; set; }
-        public string Task { get; set; }
-        public string TaskType { get; set; }
+        public required string BagSlot { get; set; }
+        public required string Task { get; set; }
+        public required string TaskType { get; set; }
         public int TaskProgress { get; set; }
         public int TaskTotal { get; set; }
         public int InventoryMaxItems { get; set; }
-        public List<InventoryItem> Inventory { get; set; }
+        public required List<InventoryItem> Inventory { get; set; } = new();
     }
 
     private class InventoryItem
     {
         public int Slot { get; set; }
-        public string Code { get; set; }
+        public required string Code { get; set; }
         public int Quantity { get; set; }
     }
 }
