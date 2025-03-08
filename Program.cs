@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Artifacts.Components;
+using Microsoft.Extensions.Configuration;
 using MudBlazor.Services;
 using Radzen;
 
@@ -12,7 +13,10 @@ builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
-
+builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .AddJsonFile(".env", optional: true, reloadOnChange: true);
 // Register IHttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 

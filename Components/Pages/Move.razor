@@ -12,6 +12,7 @@
 
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NotificationService NotificationService
+@inject IConfiguration Configuration
 
 <PageTitle>Let's move together</PageTitle>
 
@@ -19,19 +20,17 @@
     <RadzenStack Gap="1rem">
         <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">Time to move</RadzenText>
         
-        <RadzenProgressBar Value="@progressWidth" ShowValue="true" Style="height: 20px;" class="rz-mb-3" />
+        <RadzenProgressBar @bind-Value="@progressWidth" ShowValue="false"class="rz-m-12" />
         
         <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" JustifyContent="JustifyContent.Start" Class="rz-mb-3">
             <RadzenButton ButtonStyle="@(IsActionButtonsDisabled ? ButtonStyle.Light : ButtonStyle.Primary)" 
                         Text="Move" 
                         Icon="directions_walk"
-                        Click="@MoveAction" 
-                        Disabled="@IsActionButtonsDisabled" />
+                        Click="@MoveAction"  />
             <RadzenButton ButtonStyle="@(autoGather ? ButtonStyle.Danger : ButtonStyle.Success)" 
                         Text="Gather" 
                         Icon="@(autoGather ? "stop" : "play_arrow")"
-                        Click="@Gather" 
-                        Disabled="@IsActionButtonsDisabled" />
+                        Click="@(Gather)"  />
             <RadzenButton ButtonStyle="ButtonStyle.Info" 
                         Text="Fetch Map Data" 
                         Icon="map"
@@ -41,8 +40,8 @@
         <RadzenStack Gap="0.5rem" class="rz-p-2 rz-border-radius-1" Style="background-color: var(--rz-base-100);">
             <RadzenText TextStyle="TextStyle.Subtitle1">Current Position</RadzenText>
             <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem">
-                <RadzenText TextStyle="TextStyle.Body1">X: @currentXCoordinate</RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1">Y: @currentYCoordinate</RadzenText>
+                <RadzenNumeric @bind-Value="currentXCoordinate" TextStyle="TextStyle.Body1">X: @currentXCoordinate</RadzenNumeric>
+                <RadzenNumeric @bind-Value="currentYCoordinate" TextStyle="TextStyle.Body1">Y: @currentYCoordinate</RadzenNumeric>
             </RadzenStack>
         </RadzenStack>
     </RadzenStack>
@@ -96,6 +95,9 @@
                 <RadzenRow>
                     <RadzenColumn Size="6">
                         <RadzenStack Gap="0.5rem">
+    using System.Security.Cryptography;
+    using System.Security.Cryptography;
+    using System.Security.Cryptography;
                             <RadzenText TextStyle="TextStyle.Body1">HP: @characterData.Hp / @characterData.MaxHp</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">Haste: @characterData.Haste</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">Critical Strike: @characterData.CriticalStrike</RadzenText>
@@ -283,7 +285,7 @@
     private int currentXCoordinate { get; set; }
     private int currentYCoordinate { get; set; }
     private bool autoGather = false;
-    private string token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImdyYWhhbXJtNDVAZ21haWwuY29tIiwicGFzc3dvcmRfY2hhbmdlZCI6IiJ9.XjKyYTICSWCNv4irW5R52Zdkxc4wrQPhLheDtvlnnGQ";
+    private string token;
     private Timer? timer;
     private Timer? progressTimer;
     private int remainingSeconds;
@@ -305,32 +307,47 @@
     private string craftMaterial = string.Empty;
     private bool isSkillsSectionVisible = false;
     private int selectedIndex = 0;
+    private CancellationTokenSource? _gatherCancellationTokenSource;
 
 
     protected override void OnInitialized()
     {
+        token = Configuration["TOKEN"];
+        _ = UpdateCoordinates();
+        /*
         timer = new Timer(1000);
         timer.Elapsed += TimerElapsed;
         timer.Start();
+        */
 
-        progressTimer = new Timer(2000);
-        progressTimer.Elapsed += ProgressTimerElapsed;
-        progressTimer.Start();
+        
     }
 
     private void TimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        _ = UpdateCoordinates();
+        //_ = UpdateCoordinates();
     }
 
-    private void ProgressTimerElapsed(object? sender, ElapsedEventArgs e)
+    private async void ProgressTimerElapsed(object? sender, ElapsedEventArgs e)
     {
+        Console.WriteLine(progressWidth);
         if (remainingSeconds > 0)
         {
             remainingSeconds--;
             progressWidth = ((double)(totalCooldownSeconds - remainingSeconds) / totalCooldownSeconds) * 100;
-            InvokeAsync(StateHasChanged);
+            await InvokeAsync(StateHasChanged);
         }
+        else
+        {
+            progressTimer?.Stop();
+        }
+    }
+
+    private void ActionTimer()
+    {
+        progressTimer = new Timer(1000);
+        progressTimer.Elapsed += ProgressTimerElapsed;
+        progressTimer.Start();
     }
 
     private void ToggleCoordinatesTable()
@@ -375,7 +392,7 @@
         request.AddHeader("Content-Type", "application/json");
         request.AddHeader("Accept", "application/json");
         request.AddHeader("Authorization", "Bearer " + token);
-        var body = new { x = xCoordinate, y = yCoordinate };
+        var body = new { x = currentXCoordinate, y = currentYCoordinate };
         request.AddJsonBody(body);
         IRestResponse response = await client.ExecuteAsync(request);
 
@@ -411,13 +428,48 @@
         }
     }
 
+
     private async Task Gather()
     {
-        autoGather = !autoGather;
-        while (autoGather)
+        if (autoGather)
         {
-            await GatherAction();
+            // Stop gathering
+            _gatherCancellationTokenSource?.Cancel();
+            autoGather = false;
         }
+        else
+        {
+            // Start gathering
+            autoGather = true;
+            _gatherCancellationTokenSource = new CancellationTokenSource();
+            
+            try
+            {
+                while (!_gatherCancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    if (progressWidth == 100 || progressWidth == 0)
+                        await GatherAction();
+                        
+                    await Task.Delay(1000, _gatherCancellationTokenSource.Token);
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Normal cancellation, do nothing
+            }
+            catch (Exception)
+            {
+                autoGather = false;
+            }
+            finally
+            {
+                _gatherCancellationTokenSource.Dispose();
+                _gatherCancellationTokenSource = null;
+            }
+        }
+        
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task GatherAction()
@@ -436,11 +488,12 @@
             remainingSeconds = totalCooldownSeconds;
 
             NotificationService.Notify(NotificationSeverity.Success, "Gather action", remainingSeconds.ToString());
-            await Task.Delay(remainingSeconds * 1000);
+            ActionTimer();
         }
         else
         {
             Console.WriteLine("Gather failed");
+            Console.WriteLine(response.StatusCode);
             if((int)response.StatusCode == 497)
             {
                 autoGather = false;
@@ -557,6 +610,7 @@
             totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
             remainingSeconds = totalCooldownSeconds;
             Console.WriteLine("Craft success");
+            await InvokeAsync(StateHasChanged);
             NotificationService.Notify(NotificationSeverity.Success, "Craft action", "Craft success");
         }
         else
@@ -599,6 +653,12 @@
         isCharInventorySectionVisible = !isCharInventorySectionVisible;
     }
 
+    private void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+
+    }
+
     private async Task FetchCharacterData()
     {
         var client = new HttpClient();
@@ -607,6 +667,7 @@
         var response = await client.GetAsync(url);
         if (response.IsSuccessStatusCode)
         {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Info Summary", Detail = "Info Detail", Duration = 4000 });
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var characterJson = JsonDocument.Parse(jsonResponse);
             var character = characterJson.RootElement.GetProperty("data");
@@ -705,13 +766,14 @@
             NotificationService.Notify(NotificationSeverity.Error, "Fetch character data action", response.StatusCode.ToString());
         }
     }
+    
 
     private string GetNonce()
     {
         return HttpContextAccessor.HttpContext?.Items["CSPNonce"] as string ?? string.Empty;
     }
 
-    private bool IsActionButtonsDisabled => remainingSeconds > 0;
+    private bool IsActionButtonsDisabled => (progressWidth < 100 && progressWidth > 0) && !autoGather;
 
     private class Item
     {

@@ -147,3 +147,4 @@ C:\Users\rgraham04\source\FrontEndTest\blazing-artifact\obj\Debug\net8.0\refint\
 C:\Users\rgraham04\source\FrontEndTest\blazing-artifact\obj\Debug\net8.0\Artifacts.pdb
 C:\Users\rgraham04\source\FrontEndTest\blazing-artifact\obj\Debug\net8.0\Artifacts.genruntimeconfig.cache
 C:\Users\rgraham04\source\FrontEndTest\blazing-artifact\obj\Debug\net8.0\ref\Artifacts.dll
+C:\ArtifactsMMO\Artifacts\obj\Debug\net8.0\Artifacts.sourcelink.json
