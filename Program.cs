@@ -2,11 +2,7 @@ using System.Security.Cryptography;
 using Artifacts.Components;
 using Artifacts.Components.Services;
 using Radzen;
-using DotNetEnv;
 
-
-DotNetEnv.Env.Load();
-var token = Environment.GetEnvironmentVariable("TOKEN");
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -20,7 +16,7 @@ builder.Services.AddRadzenComponents();
 builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables()
-    .AddJsonFile(".env", optional: true, reloadOnChange: true);
+    .Add(new EnvConfigurationSource(".env"));
 // Register IHttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CharacterService>();

@@ -193,8 +193,8 @@
         try
         {
             var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", 
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImdyYWhhbXJtNDVAZ21haWwuY29tIiwicGFzc3dvcmRfY2hhbmdlZCI6IiJ9.XjKyYTICSWCNv4irW5R52Zdkxc4wrQPhLheDtvlnnGQ");
+            var token = Configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             var url = "https://api.artifactsmmo.com/maps";
             if (!string.IsNullOrEmpty(contentType))
             {
@@ -235,8 +235,8 @@
         try
         {
             var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", 
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImdyYWhhbXJtNDVAZ21haWwuY29tIiwicGFzc3dvcmRfY2hhbmdlZCI6IiJ9.XjKyYTICSWCNv4irW5R52Zdkxc4wrQPhLheDtvlnnGQ");
+            var token = Configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             var url = $"https://api.artifactsmmo.com/items?craft_material={craftMaterial}";
             var response = await client.GetAsync(url);
             if (response.IsSuccessStatusCode)

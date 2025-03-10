@@ -10,7 +10,7 @@ namespace Artifacts.Components.Services
     
     public class CharacterService
     {
-        private IConfiguration Configuration;
+        private IConfiguration _configuration;
         private string _token;
         private NotificationService _notificationService;
         private Dictionary<string, CharacterData> _characters = new();
@@ -27,7 +27,8 @@ namespace Artifacts.Components.Services
 
         public CharacterService(NotificationService notificationService, IConfiguration configuration)
         {
-            _token = configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
+            _configuration = configuration;
+            _token = _configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
             _notificationService = notificationService;
             
             // Add some test characters for demonstration purposes
@@ -52,7 +53,7 @@ namespace Artifacts.Components.Services
 
         public async Task InitializeAsync()
         {
-            _token = Configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
+            _token = _configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
             await FetchAllCharactersAsync();
         }
 
