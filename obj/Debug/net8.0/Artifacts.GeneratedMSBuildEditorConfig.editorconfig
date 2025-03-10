@@ -33,6 +33,14 @@ build_property._RazorSourceGeneratorDebug =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/rgraham04/source/FrontEndTest/blazing-artifact/Components/CharacterDetail.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xDaGFyYWN0ZXJEZXRhaWwucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/rgraham04/source/FrontEndTest/blazing-artifact/Components/CharacterSummary.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xDaGFyYWN0ZXJTdW1tYXJ5LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/rgraham04/source/FrontEndTest/blazing-artifact/Components/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb3VudGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 

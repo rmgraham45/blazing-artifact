@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Artifacts.Components;
+using Artifacts.Components.Services;
 using MudBlazor.Services;
 using Radzen;
 
@@ -12,6 +13,7 @@ builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
+builder.Services.AddScoped<CharacterService>();
 
 // Register IHttpContextAccessor
 builder.Services.AddHttpContextAccessor();

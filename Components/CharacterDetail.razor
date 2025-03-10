@@ -1,0 +1,226 @@
+@using Artifacts.Components.Services
+@using System.Text.Json
+@inject CharacterService CharacterService
+@inject NotificationService NotificationService
+
+@if (Character != null)
+{
+    <RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
+        <RadzenStack Gap="1rem">
+            <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">@Character.Name</RadzenText>
+            
+            <RadzenProgressBar Value="@CharacterService.GetProgressWidth(Character.Name)" ShowValue="true" Style="height: 20px;" class="rz-mb-3" />
+            
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" JustifyContent="JustifyContent.Start" Class="rz-mb-3">
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenStack Gap="0.5rem" Style="width: 80px;">
+                        <RadzenText TextStyle="TextStyle.Caption">X</RadzenText>
+                        <RadzenNumeric @bind-Value="xCoordinate" />
+                    </RadzenStack>
+                    <RadzenStack Gap="0.5rem" Style="width: 80px;">
+                        <RadzenText TextStyle="TextStyle.Caption">Y</RadzenText>
+                        <RadzenNumeric @bind-Value="yCoordinate" />
+                    </RadzenStack>
+                </RadzenStack>
+                
+                <RadzenButton ButtonStyle="@(CharacterService.IsActionButtonsDisabled(Character.Name) ? ButtonStyle.Light : ButtonStyle.Primary)" 
+                            Text="Move" 
+                            Icon="directions_walk"
+                            Click="@MoveAction" 
+                            Disabled="@CharacterService.IsActionButtonsDisabled(Character.Name)" />
+                <RadzenButton ButtonStyle="@(CharacterService.IsAutoGatherEnabled(Character.Name) ? ButtonStyle.Danger : ButtonStyle.Success)" 
+                            Text="Gather" 
+                            Icon="@(CharacterService.IsAutoGatherEnabled(Character.Name) ? "stop" : "play_arrow")"
+                            Click="@Gather" 
+                            Disabled="@CharacterService.IsActionButtonsDisabled(Character.Name)" />
+            </RadzenStack>
+
+            <RadzenStack Gap="0.5rem" class="rz-p-2 rz-border-radius-1" Style="background-color: var(--rz-base-100);">
+                <RadzenText TextStyle="TextStyle.Subtitle1">Current Position</RadzenText>
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem">
+                    <RadzenText TextStyle="TextStyle.Body1">X: @Character.X</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">Y: @Character.Y</RadzenText>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Server" @bind-SelectedIndex=@selectedIndex>
+        <Tabs>
+            <RadzenTabsItem Text="Basic Info">
+                <RadzenCard class="rz-card rz-variant-filled rz-border-radius-3">
+                    <h3>@Character.Name</h3>
+                    <RadzenStack JustifyContent="JustifyContent.Start" Gap="1rem" class="rz-p-2">
+                        <RadzenText TextStyle="TextStyle.Body1">Account: @Character.Account</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">Skin: @Character.Skin</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">Level: @Character.Level</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">XP: @Character.Xp / @Character.MaxXp</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">Gold: @Character.Gold</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">Speed: @Character.Speed</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Skills">
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Mining: @Character.MiningLevel (XP: @Character.MiningXp / @Character.MiningMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Woodcutting: @Character.WoodcuttingLevel (XP: @Character.WoodcuttingXp / @Character.WoodcuttingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Fishing: @Character.FishingLevel (XP: @Character.FishingXp / @Character.FishingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Weaponcrafting: @Character.WeaponcraftingLevel (XP: @Character.WeaponcraftingXp / @Character.WeaponcraftingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Gearcrafting: @Character.GearcraftingLevel (XP: @Character.GearcraftingXp / @Character.GearcraftingMaxXp)</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Jewelrycrafting: @Character.JewelrycraftingLevel (XP: @Character.JewelrycraftingXp / @Character.JewelrycraftingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Cooking: @Character.CookingLevel (XP: @Character.CookingXp / @Character.CookingMaxXp)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Alchemy: @Character.AlchemyLevel (XP: @Character.AlchemyXp / @Character.AlchemyMaxXp)</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Stats">
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">HP: @Character.Hp / @Character.MaxHp</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Haste: @Character.Haste</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Critical Strike: @Character.CriticalStrike</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Wisdom: @Character.Wisdom</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Prospecting: @Character.Prospecting</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Attack Fire: @Character.AttackFire</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Attack Earth: @Character.AttackEarth</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Attack Water: @Character.AttackWater</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Attack Air: @Character.AttackAir</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage: @Character.Dmg</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage Fire: @Character.DmgFire</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage Earth: @Character.DmgEarth</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage Water: @Character.DmgWater</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Damage Air: @Character.DmgAir</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Resistance Fire: @Character.ResFire</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Resistance Earth: @Character.ResEarth</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Resistance Water: @Character.ResWater</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Resistance Air: @Character.ResAir</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Position">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Body1">X: @Character.X</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">Y: @Character.Y</RadzenText>
+                </RadzenStack>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Cooldown">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Body1">Cooldown: @Character.Cooldown</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">Cooldown Expiration: @Character.CooldownExpiration</RadzenText>
+                </RadzenStack>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Equipment">
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Leg Armor Slot: @Character.LegArmorSlot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Boots Slot: @Character.BootsSlot</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Body1">Ring1 Slot: @Character.Ring1Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Ring2 Slot: @Character.Ring2Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Amulet Slot: @Character.AmuletSlot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Artifact1 Slot: @Character.Artifact1Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Artifact2 Slot: @Character.Artifact2Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Artifact3 Slot: @Character.Artifact3Slot</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Utility1 Slot: @Character.Utility1Slot (Quantity: @Character.Utility1SlotQuantity)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Utility2 Slot: @Character.Utility2Slot (Quantity: @Character.Utility2SlotQuantity)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">Bag Slot: @Character.BagSlot</RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Inventory">
+                <RadzenDataGrid Data="@Character.Inventory">
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(InventoryItem.Code)" Title="Name" />
+                        <RadzenDataGridColumn Property="@nameof(InventoryItem.Quantity)" Title="Quantity" />
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+
+    <RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
+        <RadzenText TextStyle="TextStyle.H4" class="rz-mb-3">Craft Item</RadzenText>
+        <RadzenStack Gap="1rem" Class="rz-mb-3">
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+                <RadzenStack Gap="0.5rem" Style="width: 200px;">
+                    <RadzenText TextStyle="TextStyle.Caption">Item Code</RadzenText>
+                    <RadzenTextBox Placeholder="Enter item code" @bind-Value="craftItemCode" />
+                </RadzenStack>
+                <RadzenStack Gap="0.5rem" Style="width: 120px;">
+                    <RadzenText TextStyle="TextStyle.Caption">Quantity</RadzenText>
+                    <RadzenNumeric Placeholder="Qty" @bind-Value="craftItemQuantity" Min="1" />
+                </RadzenStack>
+                <RadzenButton ButtonStyle="ButtonStyle.Primary" 
+                            Text="Craft Item" 
+                            Icon="build" 
+                            Click="@CraftItemAction" 
+                            Disabled="@CharacterService.IsActionButtonsDisabled(Character.Name)" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>
+}
+
+@code {
+    [Parameter]
+    public CharacterData Character { get; set; } = null!;
+    
+    private int yCoordinate;
+    private int xCoordinate;
+    private string craftItemCode = string.Empty;
+    private int craftItemQuantity = 1;
+    private int selectedIndex = 0;
+    
+    protected override void OnParametersSet()
+    {
+        if (Character != null)
+        {
+            xCoordinate = Character.X;
+            yCoordinate = Character.Y;
+        }
+    }
+    
+    private async Task MoveAction()
+    {
+        await CharacterService.MoveActionAsync(Character.Name, xCoordinate, yCoordinate);
+    }
+    
+    private async Task Gather()
+    {
+        await CharacterService.ToggleAutoGatherAsync(Character.Name);
+    }
+    
+    private async Task CraftItemAction()
+    {
+        await CharacterService.CraftItemActionAsync(Character.Name, craftItemCode, craftItemQuantity);
+    }
+    
+    protected override void OnInitialized()
+    {
+        CharacterService.OnCooldownUpdated += StateHasChanged;
+        CharacterService.OnCharactersUpdated += StateHasChanged;
+    }
+    
+    public void Dispose()
+    {
+        CharacterService.OnCooldownUpdated -= StateHasChanged;
+        CharacterService.OnCharactersUpdated -= StateHasChanged;
+    }
+}

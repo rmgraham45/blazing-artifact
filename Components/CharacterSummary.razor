@@ -1,0 +1,83 @@
+@using Artifacts.Components.Services
+@inject CharacterService CharacterService
+@inject NotificationService NotificationService
+
+<RadzenCard class="rz-my-2 rz-p-3 rz-shadow-2 character-summary-card">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+        <RadzenStack Gap="0.5rem">
+            <RadzenText TextStyle="TextStyle.H5" class="rz-mb-0">@Character.Name</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+                <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"Level {Character.Level}")" />
+                <RadzenText TextStyle="TextStyle.Body2">Position: @Character.X, @Character.Y</RadzenText>
+                
+                @if (CharacterService.IsActionButtonsDisabled(Character.Name))
+                {
+                    <RadzenProgressBar Value="@CharacterService.GetProgressWidth(Character.Name)" 
+                                      ShowValue="false" 
+                                      Style="height: 8px; width: 100px;" />
+                }
+                else
+                {
+                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Ready" />
+                }
+                
+                @if (CharacterService.IsAutoGatherEnabled(Character.Name))
+                {
+                    <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="Auto-Gathering" />
+                }
+            </RadzenStack>
+        </RadzenStack>
+        
+        <RadzenButton ButtonStyle="ButtonStyle.Light" 
+                     Icon="@(IsExpanded ? "expand_less" : "expand_more")" 
+                     Click="ToggleExpand" />
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Parameter]
+    public CharacterData Character { get; set; } = null!;
+    
+    [Parameter]
+    public EventCallback<string> OnExpand { get; set; }
+    
+    private bool IsExpanded => CharacterService.GetExpandedCharacter() == Character.Name;
+    
+    private async Task ToggleExpand()
+    {
+        if (IsExpanded)
+        {
+            CharacterService.SetExpandedCharacter(string.Empty);
+        }
+        else
+        {
+            CharacterService.SetExpandedCharacter(Character.Name);
+            await CharacterService.FetchCharacterDataAsync(Character.Name);
+        }
+        
+        await OnExpand.InvokeAsync(Character.Name);
+    }
+    
+    protected override void OnInitialized()
+    {
+        CharacterService.OnCooldownUpdated += StateHasChanged;
+        CharacterService.OnCharactersUpdated += StateHasChanged;
+    }
+    
+    public void Dispose()
+    {
+        CharacterService.OnCooldownUpdated -= StateHasChanged;
+        CharacterService.OnCharactersUpdated -= StateHasChanged;
+    }
+}
+
+<style>
+    .character-summary-card {
+        transition: all 0.3s ease;
+    }
+    
+    .character-summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
