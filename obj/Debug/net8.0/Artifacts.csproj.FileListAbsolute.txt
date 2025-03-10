@@ -148,3 +148,5 @@ C:\Users\rgraham04\source\FrontEndTest\blazing-artifact\obj\Debug\net8.0\Artifac
 C:\Users\rgraham04\source\FrontEndTest\blazing-artifact\obj\Debug\net8.0\Artifacts.genruntimeconfig.cache
 C:\Users\rgraham04\source\FrontEndTest\blazing-artifact\obj\Debug\net8.0\ref\Artifacts.dll
 C:\ArtifactsMMO\Artifacts\obj\Debug\net8.0\Artifacts.sourcelink.json
+C:\ArtifactsMMO\Artifacts\bin\Debug\net8.0\DotNetEnv.dll
+C:\ArtifactsMMO\Artifacts\bin\Debug\net8.0\Sprache.dll

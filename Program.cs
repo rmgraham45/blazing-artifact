@@ -3,7 +3,11 @@ using Artifacts.Components;
 using Microsoft.Extensions.Configuration;
 using MudBlazor.Services;
 using Radzen;
+using DotNetEnv;
 
+
+DotNetEnv.Env.Load();
+var token = Environment.GetEnvironmentVariable("TOKEN");
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -13,6 +17,7 @@ builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
+builder.Services.AddRadzenComponents();
 builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables()

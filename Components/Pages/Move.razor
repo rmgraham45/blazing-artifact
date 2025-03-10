@@ -9,6 +9,7 @@
 @using System.Timers
 @using Radzen
 @using Radzen.Blazor
+@implements IDisposable
 
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NotificationService NotificationService
@@ -16,36 +17,17 @@
 
 <PageTitle>Let's move together</PageTitle>
 
-<RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
-    <RadzenStack Gap="1rem">
-        <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">Time to move</RadzenText>
-        
-        <RadzenProgressBar @bind-Value="@progressWidth" ShowValue="false"class="rz-m-12" />
-        
-        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" JustifyContent="JustifyContent.Start" Class="rz-mb-3">
-            <RadzenButton ButtonStyle="@(IsActionButtonsDisabled ? ButtonStyle.Light : ButtonStyle.Primary)" 
-                        Text="Move" 
-                        Icon="directions_walk"
-                        Click="@MoveAction"  />
-            <RadzenButton ButtonStyle="@(autoGather ? ButtonStyle.Danger : ButtonStyle.Success)" 
-                        Text="Gather" 
-                        Icon="@(autoGather ? "stop" : "play_arrow")"
-                        Click="@(Gather)"  />
-            <RadzenButton ButtonStyle="ButtonStyle.Info" 
-                        Text="Fetch Map Data" 
-                        Icon="map"
-                        Click="@FetchMapData" />
-        </RadzenStack>
+<div class="select-bar">
+    @foreach (var option in characterNames)
+    {
+        <RadzenButton ButtonStyle="@(selectedCharacter == option ? ButtonStyle.Primary : ButtonStyle.Light)"
+                      Text="@option"
+                      Click="@(() => SelectCharacterOption(option))"
+                      Class="select-button" />
+    }
+</div>
 
-        <RadzenStack Gap="0.5rem" class="rz-p-2 rz-border-radius-1" Style="background-color: var(--rz-base-100);">
-            <RadzenText TextStyle="TextStyle.Subtitle1">Current Position</RadzenText>
-            <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem">
-                <RadzenNumeric @bind-Value="currentXCoordinate" TextStyle="TextStyle.Body1">X: @currentXCoordinate</RadzenNumeric>
-                <RadzenNumeric @bind-Value="currentYCoordinate" TextStyle="TextStyle.Body1">Y: @currentYCoordinate</RadzenNumeric>
-            </RadzenStack>
-        </RadzenStack>
-    </RadzenStack>
-</RadzenCard>
+<RadzenNotification />
 
 <RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
     <RadzenText TextStyle="TextStyle.H4" class="rz-mb-3">Character Information</RadzenText>
@@ -95,9 +77,6 @@
                 <RadzenRow>
                     <RadzenColumn Size="6">
                         <RadzenStack Gap="0.5rem">
-    using System.Security.Cryptography;
-    using System.Security.Cryptography;
-    using System.Security.Cryptography;
                             <RadzenText TextStyle="TextStyle.Body1">HP: @characterData.Hp / @characterData.MaxHp</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">Haste: @characterData.Haste</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">Critical Strike: @characterData.CriticalStrike</RadzenText>
@@ -170,6 +149,56 @@
         </Tabs>
     </RadzenTabs>
 }
+
+<RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
+    <RadzenStack Gap="1rem">
+        <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">Time to move</RadzenText>
+        
+        <RadzenProgressBar @bind-Value="@progressWidth" ShowValue="true"class="rz-m-12" />
+        
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" JustifyContent="JustifyContent.Start" Class="rz-mb-3">
+            <RadzenButton ButtonStyle="@(IsActionButtonsDisabled ? ButtonStyle.Light : ButtonStyle.Primary)" 
+                        Text="Move" 
+                        Icon="directions_walk"
+                        Click="@MoveAction"  />
+            @if (autoGather)
+            {
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" 
+                            Text="Stop Gathering" 
+                            Icon="stop"
+                            Click="@(Gather)" />
+            }
+            else if(!autoGather && remainingSeconds > 0)
+            {
+                <RadzenButton ButtonStyle="ButtonStyle.Success" 
+                            Text="Start Gathering" 
+                            Icon="play_arrow"
+                            Click="@(Gather)"
+                            Disabled=true />
+            }
+            else
+            {
+                <RadzenButton ButtonStyle="ButtonStyle.Success" 
+                            Text="Start Gathering" 
+                            Icon="play_arrow"
+                            Click="@(Gather)" />
+            }
+            <RadzenButton ButtonStyle="ButtonStyle.Info" 
+                        Text="Fetch Map Data" 
+                        Icon="map"
+                        Click="@FetchMapData" />
+        </RadzenStack>
+        
+
+        <RadzenStack Gap="0.5rem" class="rz-p-2 rz-border-radius-1" Style="background-color: var(--rz-base-100);">
+            <RadzenText TextStyle="TextStyle.Subtitle1">Current Position</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem">
+                <RadzenNumeric @bind-Value="currentXCoordinate" TextStyle="TextStyle.Body1">X: @currentXCoordinate</RadzenNumeric>
+                <RadzenNumeric @bind-Value="currentYCoordinate" TextStyle="TextStyle.Body1">Y: @currentYCoordinate</RadzenNumeric>
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
 
 <RadzenCard class="rz-my-4 rz-p-4 rz-shadow-3">
     <RadzenText TextStyle="TextStyle.H4" class="rz-mb-3">Craft Item</RadzenText>
@@ -280,6 +309,8 @@
 </RadzenCard>
 
 @code {
+    private List<string> characterNames = new List<string> { "pancake", "Izzy", "Goober" };
+    private string selectedCharacter = "pancake";
     private int yCoordinate { get; set; }
     private int xCoordinate { get; set; }
     private int currentXCoordinate { get; set; }
@@ -312,7 +343,7 @@
 
     protected override void OnInitialized()
     {
-        token = Configuration["TOKEN"];
+        token = Configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
         _ = UpdateCoordinates();
         /*
         timer = new Timer(1000);
@@ -330,7 +361,7 @@
 
     private async void ProgressTimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        Console.WriteLine(progressWidth);
+        Console.WriteLine(remainingSeconds);
         if (remainingSeconds > 0)
         {
             remainingSeconds--;
@@ -340,14 +371,44 @@
         else
         {
             progressTimer?.Stop();
+            progressTimer?.Dispose(); // Add disposal of the timer
+            progressTimer = null; // Set to null after disposal
+            progressWidth = 0;
+            await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private void SelectCharacterOption(string option)
+    {
+        selectedCharacter = option;
     }
 
     private void ActionTimer()
     {
+
+        if (progressTimer != null)
+        {
+            progressTimer.Stop();
+            progressTimer.Dispose();
+            progressTimer = null;
+        }
         progressTimer = new Timer(1000);
         progressTimer.Elapsed += ProgressTimerElapsed;
         progressTimer.Start();
+    }
+
+    public void Dispose()
+    {
+        if (progressTimer != null)
+        {
+            progressTimer.Stop();
+            progressTimer.Dispose();
+            progressTimer = null;
+        }
+
+        _gatherCancellationTokenSource?.Cancel();
+    _gatherCancellationTokenSource?.Dispose();
+    _gatherCancellationTokenSource = null;
     }
 
     private void ToggleCoordinatesTable()
@@ -376,6 +437,7 @@
                         break;
                     }
                 }
+                ActionTimer();
                 await InvokeAsync(StateHasChanged);
             }
         }
@@ -395,13 +457,13 @@
         var body = new { x = currentXCoordinate, y = currentYCoordinate };
         request.AddJsonBody(body);
         IRestResponse response = await client.ExecuteAsync(request);
-
         if (response.IsSuccessful)
         {
             var jsonResponse = JsonDocument.Parse(response.Content);
             totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
             remainingSeconds = totalCooldownSeconds;
-            Console.WriteLine("Move success");
+            ActionTimer();
+            await InvokeAsync(StateHasChanged);
             NotificationService.Notify(NotificationSeverity.Success, "Move action", "Move success");
         }
         else
@@ -431,45 +493,41 @@
 
     private async Task Gather()
     {
-        if (autoGather)
+            if (autoGather)
         {
             // Stop gathering
-            _gatherCancellationTokenSource?.Cancel();
             autoGather = false;
+            _gatherCancellationTokenSource?.Cancel();
+            NotificationService.Notify(NotificationSeverity.Info, "Auto Gather", "Auto gathering stopped");
+            await InvokeAsync(StateHasChanged);
+            return;
         }
-        else
+
+        // Start gathering
+        autoGather = true;
+        _gatherCancellationTokenSource = new CancellationTokenSource();
+        NotificationService.Notify(NotificationSeverity.Info, "Auto Gather", "Auto gathering started");
+
+        try
         {
-            // Start gathering
-            autoGather = true;
-            _gatherCancellationTokenSource = new CancellationTokenSource();
-            
-            try
+            while (!_gatherCancellationTokenSource.Token.IsCancellationRequested)
             {
-                while (!_gatherCancellationTokenSource.Token.IsCancellationRequested)
+                if (progressWidth == 100 || progressWidth == 0)
                 {
-                    if (progressWidth == 100 || progressWidth == 0)
-                        await GatherAction();
-                        
-                    await Task.Delay(1000, _gatherCancellationTokenSource.Token);
-                    await InvokeAsync(StateHasChanged);
+                    await GatherAction();
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                // Normal cancellation, do nothing
-            }
-            catch (Exception)
-            {
-                autoGather = false;
-            }
-            finally
-            {
-                _gatherCancellationTokenSource.Dispose();
-                _gatherCancellationTokenSource = null;
+                await Task.Delay(1500, _gatherCancellationTokenSource.Token);
             }
         }
-        
-        await InvokeAsync(StateHasChanged);
+        catch (OperationCanceledException)
+        {
+            // Handle cancellation
+        }
+        finally
+        {
+            _gatherCancellationTokenSource.Dispose();
+            _gatherCancellationTokenSource = null;
+        }
     }
 
     private async Task GatherAction()
@@ -488,16 +546,15 @@
             remainingSeconds = totalCooldownSeconds;
 
             NotificationService.Notify(NotificationSeverity.Success, "Gather action", remainingSeconds.ToString());
+            Console.WriteLine("GatherAction");
             ActionTimer();
         }
         else
         {
             Console.WriteLine("Gather failed");
             Console.WriteLine(response.StatusCode);
-            if((int)response.StatusCode == 497)
-            {
-                autoGather = false;
-            }
+            autoGather = false;
+            _gatherCancellationTokenSource?.Cancel();
             NotificationService.Notify(NotificationSeverity.Error, "Gather action", response.StatusCode.ToString());
         }
     }
@@ -535,6 +592,7 @@
             if (coordinatesList != null)
             {
                 coordinates = coordinatesList;
+                ActionTimer();
                 await InvokeAsync(StateHasChanged);
             }
         }
@@ -583,6 +641,7 @@
             }).ToList();
             if (craftItemsList != null)
             {
+                ActionTimer();
                 craftItems = craftItemsList;
                 await InvokeAsync(StateHasChanged);
             }
@@ -609,14 +668,14 @@
             var jsonResponse = JsonDocument.Parse(response.Content);
             totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
             remainingSeconds = totalCooldownSeconds;
-            Console.WriteLine("Craft success");
+            ActionTimer();
             await InvokeAsync(StateHasChanged);
-            NotificationService.Notify(NotificationSeverity.Success, "Craft action", "Craft success");
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Craft action", Detail = response.StatusCode + "\n" + remainingSeconds + " seconds", Duration = 4000 });
         }
         else
         {
             Console.WriteLine("Craft failed");
-            NotificationService.Notify(NotificationSeverity.Error, "Craft action", response.StatusCode.ToString());
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Craft action", Detail = response.StatusCode + "\n", Duration = 4000 });
         }
     }
 
@@ -653,11 +712,6 @@
         isCharInventorySectionVisible = !isCharInventorySectionVisible;
     }
 
-    private void ShowNotification(NotificationMessage message)
-    {
-        NotificationService.Notify(message);
-
-    }
 
     private async Task FetchCharacterData()
     {
@@ -667,7 +721,8 @@
         var response = await client.GetAsync(url);
         if (response.IsSuccessStatusCode)
         {
-            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Info Summary", Detail = "Info Detail", Duration = 4000 });
+            Console.WriteLine("Fetch character data success");
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Info Summary", Detail = response.StatusCode + "\n" + 0 + " seconds", Duration = 4000 });
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var characterJson = JsonDocument.Parse(jsonResponse);
             var character = characterJson.RootElement.GetProperty("data");
@@ -758,6 +813,7 @@
                     Quantity = item.GetProperty("quantity").GetInt32()
                 }).Where(x => x.Quantity > 0).ToList()
             };
+            ActionTimer();
             await InvokeAsync(StateHasChanged);
         }
         else
