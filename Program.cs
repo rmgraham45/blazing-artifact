@@ -1,9 +1,12 @@
 using System.Security.Cryptography;
 using Artifacts.Components;
 using Artifacts.Components.Services;
-using MudBlazor.Services;
 using Radzen;
+using DotNetEnv;
 
+
+DotNetEnv.Env.Load();
+var token = Environment.GetEnvironmentVariable("TOKEN");
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

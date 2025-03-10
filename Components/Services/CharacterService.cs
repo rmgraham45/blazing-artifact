@@ -23,7 +23,6 @@ namespace Artifacts.Components.Services
 
         public CharacterService(NotificationService notificationService)
         {
-            _token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImdyYWhhbXJtNDVAZ21haWwuY29tIiwicGFzc3dvcmRfY2hhbmdlZCI6IiJ9.XjKyYTICSWCNv4irW5R52Zdkxc4wrQPhLheDtvlnnGQ";
             _notificationService = notificationService;
             
             // Add some test characters for demonstration purposes
