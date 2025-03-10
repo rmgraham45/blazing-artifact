@@ -2,27 +2,32 @@ using System.Text.Json;
 using System.Timers;
 using Timer = System.Timers.Timer;
 using Radzen;
+using RestSharp;
+
 
 namespace Artifacts.Components.Services
 {
+    
     public class CharacterService
     {
-        private readonly string _token;
-        private readonly NotificationService _notificationService;
-        private readonly Dictionary<string, CharacterData> _characters = new();
-        private readonly Dictionary<string, bool> _autoGatherStatus = new();
-        private readonly Dictionary<string, Timer> _cooldownTimers = new();
-        private readonly Dictionary<string, Timer> _progressTimers = new();
-        private readonly Dictionary<string, (int TotalSeconds, int RemainingSeconds)> _cooldowns = new();
-        private readonly Dictionary<string, double> _progressWidths = new();
-        private readonly List<string> _characterNames = new();
+        private IConfiguration Configuration;
+        private string _token;
+        private NotificationService _notificationService;
+        private Dictionary<string, CharacterData> _characters = new();
+        private Dictionary<string, bool> _autoGatherStatus = new();
+        private Dictionary<string, Timer> _cooldownTimers = new();
+        private Dictionary<string, Timer> _progressTimers = new();
+        private Dictionary<string, (int TotalSeconds, int RemainingSeconds)> _cooldowns = new();
+        private Dictionary<string, double> _progressWidths = new();
+        private List<string> _characterNames = new();
         private string _expandedCharacter = string.Empty;
 
         public event Action? OnCharactersUpdated;
         public event Action? OnCooldownUpdated;
 
-        public CharacterService(NotificationService notificationService)
+        public CharacterService(NotificationService notificationService, IConfiguration configuration)
         {
+            _token = configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
             _notificationService = notificationService;
             
             // Add some test characters for demonstration purposes
@@ -47,6 +52,7 @@ namespace Artifacts.Components.Services
 
         public async Task InitializeAsync()
         {
+            _token = Configuration["TOKEN"] ?? throw new InvalidOperationException("TOKEN configuration value is missing");
             await FetchAllCharactersAsync();
         }
 
@@ -436,26 +442,23 @@ namespace Artifacts.Components.Services
             _characters[characterName] = character;
         }
 
-    public async Task MoveActionAsync(string characterName, int x, int y)
+    public async Task MoveActionAsync(string characterName, int xCoordinate, int yCoordinate)
     {
         try
         {
-            Console.WriteLine("Here");
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
-            
-            var content = new StringContent(
-                System.Text.Json.JsonSerializer.Serialize(new { x, y }),
-                System.Text.Encoding.UTF8,
-                "application/json");
-                
-            var response = await client.PostAsync($"https://api.artifactsmmo.com/my/{characterName}/action/move", content);
-            
-            if (response.IsSuccessStatusCode)
+            var client = new RestClient("https://api.artifactsmmo.com/my/pancake/action/move");
+            var request = new RestRequest(Method.POST);
+            request.AddHeader("Content-Type", "application/json");
+            request.AddHeader("Accept", "application/json");
+            request.AddHeader("Authorization", "Bearer " + _token);
+            var body = new { x = xCoordinate, y = yCoordinate };
+            request.AddJsonBody(body);
+            IRestResponse response = await client.ExecuteAsync(request);
+            Console.WriteLine(_token);
+            if (response.IsSuccessful)
             {
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                var jsonDocument = JsonDocument.Parse(jsonResponse);
-                var totalCooldownSeconds = jsonDocument.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
+                var jsonResponse = JsonDocument.Parse(response.Content);
+                var totalCooldownSeconds = jsonResponse.RootElement.GetProperty("data").GetProperty("cooldown").GetProperty("remaining_seconds").GetInt32();
                 _cooldowns[characterName] = (totalCooldownSeconds, totalCooldownSeconds);
                 _progressWidths[characterName] = 0;
                 

@@ -16,10 +16,14 @@ builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
-builder.Services.AddScoped<CharacterService>();
-
+builder.Services.AddRadzenComponents();
+builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .AddJsonFile(".env", optional: true, reloadOnChange: true);
 // Register IHttpContextAccessor
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CharacterService>();
 
 var app = builder.Build();
 
